@@ -31,8 +31,38 @@ namespace Garage_3._0.Data
             ApplicationUser member = await CreateUserAsync("member@garage.se", "User", "Usersson", "19760101-1111", "P@55w.rD!");
 
             /*IEnumerable<ApplicationUser> members = */await GenerateUsers(30);
-            
-            
+
+            IEnumerable<Vehicle> vehicles = await GenerateVehicles(40);
+            _context.AddRange(vehicles);
+
+
+            await _context.SaveChangesAsync();
+        }
+
+        private static async Task<IEnumerable<Vehicle>> GenerateVehicles(int numberOfVehicles)
+        {
+            Random rnd = new(10);
+            _faker = new("sv");
+            ICollection<Vehicle> vehicles = [];
+            for (int i = 0; i < numberOfVehicles; i++) {
+                vehicles.Add(new Vehicle {
+                    LicenseNumber = _faker.Random.Replace("### ??*"), // regex: /[A-Z]{3} \d{2}[A-Z0-9]/
+                    ParkedDuration = TimeSpan.FromMinutes(rnd.Next(601)),
+                    Model = _faker.Vehicle.Model(),
+                    Color = _faker.Commerce.Color(),
+                    NumberOfWheels = rnd.Next(0, 13),
+                    ArrivalTime = new DateTime(
+                        year: rnd.Next(2020, 2025),
+                        month: rnd.Next(1, 13),
+                        day: rnd.Next(1, 28),
+                        hour: rnd.Next(0, 24),
+                        minute: rnd.Next(0, 60),
+                        second: rnd.Next(0, 60)
+                        ),
+                });
+            }
+
+            return vehicles;
         }
 
         private static async Task<IEnumerable<ApplicationUser>> GenerateUsers(int numberOfUsers)
