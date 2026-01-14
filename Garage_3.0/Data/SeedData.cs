@@ -22,6 +22,27 @@ namespace Garage_3._0.Data
             _userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 
             await AddRolesAsync([RolesNames.Admin, RolesNames.Member]);
+
+            ApplicationUser admin = await CreateUserAsync("admin@garage.se", "Admin", "Adminsson", "19800101-1111", "P@55w.rD!");
+        }
+
+        private static async Task<ApplicationUser> CreateUserAsync(string email, string fName, string lName, string personalNumber, string password)
+        {
+            ApplicationUser? found = await _userManager.FindByEmailAsync(email);
+            if (found is not null) return null!;
+
+            ApplicationUser user = new() {
+                UserName = email,
+                Email = email,
+                FirstName = fName,
+                LastName = lName,
+                EmailConfirmed = true,
+                PersonalNumber = personalNumber,
+            };
+
+            var result = await _userManager.CreateAsync(user, password);
+            if (!result.Succeeded) throw new Exception(string.Join("\n", result.Errors));
+            return user;
         }
 
         private static async Task AddRolesAsync(string[] roleNames)
