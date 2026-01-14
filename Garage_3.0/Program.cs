@@ -1,4 +1,5 @@
 using Garage_3._0.Data;
+using Garage_3._0.Extensions;
 using Garage_3._0.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
+    await app.SeedDataAsync();
 }
 else
 {
