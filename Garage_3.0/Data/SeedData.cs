@@ -32,40 +32,64 @@ namespace Garage_3._0.Data
             ApplicationUser admin = await CreateUserAsync("admin@garage.se", "Admin", "Adminsson", "19800101-1111", "P@55w.rD!");
             ApplicationUser member = await CreateUserAsync("member@garage.se", "User", "Usersson", "19760101-1111", "P@55w.rD!");
 
-            /*IEnumerable<ApplicationUser> members = */await GenerateUsers(30);
+            IEnumerable<ApplicationUser> members = await GenerateUsers(30);
+
+            IEnumerable<VehicleType> vehicleTypes = await GenerateVehicleTypes();
+            _context.VehicleTypes.AddRange(vehicleTypes);
+
 
             IEnumerable<Vehicle> vehicles = await GenerateVehicles(40);
             _context.Vehicles.AddRange(vehicles);
 
-            await JoinUsersAndVehicles();
 
             IEnumerable<ParkingSpot> parkingSpots = await GenerateParkingSpots(55);
             _context.ParkingSpots.AddRange(parkingSpots);
 
-            await JoinVehiclesAndParkingSpots();
+            await JoinVehiclesAndVehicleTypes(vehicleTypes, vehicles);
+            await JoinUsersAndVehicles(members, vehicles);
+            await JoinVehiclesAndParkingSpots(vehicles, parkingSpots);
 
             await _context.SaveChangesAsync();
         }
 
-        private static async Task JoinVehiclesAndParkingSpots()
+        private static async Task JoinVehiclesAndParkingSpots(IEnumerable<Vehicle> vehicles, IEnumerable<ParkingSpot> parkingSpots)
         {
             throw new NotImplementedException();
+        }
+
+        private static async Task JoinUsersAndVehicles(IEnumerable<ApplicationUser> members, IEnumerable<Vehicle> vehicles)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static async Task JoinVehiclesAndVehicleTypes(IEnumerable<VehicleType> vehicleTypes, IEnumerable<Vehicle> vehicles)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static async Task<IEnumerable<VehicleType>> GenerateVehicleTypes()
+        {
+            ICollection<VehicleType> vehicleTypes = [];
+            vehicleTypes.Add(new VehicleType { Name = "Boat", Size = 2 });
+            vehicleTypes.Add(new VehicleType { Name = "Bus", Size = 3 });
+            vehicleTypes.Add(new VehicleType { Name = "Car", Size = 1 });
+            vehicleTypes.Add(new VehicleType { Name = "Motorcycle", Size = 1 });
+            vehicleTypes.Add(new VehicleType { Name = "Truck", Size = 3 });
+
+            return vehicleTypes;
         }
 
         private static async Task<IEnumerable<ParkingSpot>> GenerateParkingSpots(int numberOfSpots)
         {
+            ICollection<ParkingSpot> spots = [];
             for (int i = 0; i < numberOfSpots; i++) {
-
+                spots.Add(new() {
+                    Size = _rnd.Next(1, 5),
+                    IsTaken = false
+                });
             }
-            throw new NotImplementedException();
-        }
-
-        private static async Task JoinUsersAndVehicles()
-        {
-            // for i in range vehicles
-            //  user[i%users.Length].Vehicles.Add(vehicles[i]);
-            throw new NotImplementedException();
-        }
+            return spots;
+        }        
 
         private static async Task<IEnumerable<Vehicle>> GenerateVehicles(int numberOfVehicles)
         {            
@@ -73,7 +97,7 @@ namespace Garage_3._0.Data
 
             // First vehicle using DateTime.Now to get a recent time
             vehicles.Add(new Vehicle {
-                LicenseNumber = _faker.Random.Replace("### ??*"), // regex: /[A-Z]{3} \d{2}[A-Z0-9]/
+                LicenseNumber = _faker.Random.Replace("??? ##*"), // regex: /[A-Z]{3} \d{2}[A-Z0-9]/
                 ParkedDuration = TimeSpan.FromMinutes(_rnd.Next(601)),
                 Model = _faker.Vehicle.Model(),
                 Color = _faker.Commerce.Color(),
@@ -83,7 +107,7 @@ namespace Garage_3._0.Data
 
             for (int i = 0; i < numberOfVehicles-1; i++) {
                 vehicles.Add(new Vehicle {
-                    LicenseNumber = _faker.Random.Replace("### ??*"), // regex: /[A-Z]{3} \d{2}[A-Z0-9]/
+                    LicenseNumber = _faker.Random.Replace("??? ##*"), // regex: /[A-Z]{3} \d{2}[A-Z0-9]/
                     ParkedDuration = TimeSpan.FromMinutes(_rnd.Next(601)),
                     Model = _faker.Vehicle.Model(),
                     Color = _faker.Commerce.Color(),
