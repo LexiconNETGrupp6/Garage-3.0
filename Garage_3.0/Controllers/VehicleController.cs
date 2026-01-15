@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+﻿using Garage_3._0.ConstantValues;
 using Garage_3._0.Data;
 using Garage_3._0.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Garage_3._0.Controllers
 {
@@ -27,14 +28,18 @@ namespace Garage_3._0.Controllers
         [Authorize]
         public async Task<IActionResult> Index()
         {
-            var userId = _userManager.GetUserId(User);
-
-            var vehicles = await _context.Vehicles
-                .Where(v => v.OwnerId == userId)
+            var query = _context.Vehicles
                 .Include(v => v.Owner)
                 .Include(v => v.VehicleType)
-                .ToListAsync();
+                .AsQueryable();
 
+            if (!User.IsInRole(RolesNames.Admin))
+            {
+                var userId = _userManager.GetUserId(User);
+                query = query.Where(v => v.OwnerId == userId);
+            }
+
+            var vehicles = await query.ToListAsync();
             return View(vehicles);
         }
 
@@ -59,7 +64,7 @@ namespace Garage_3._0.Controllers
         }
 
         // GET: Vehicle/Create
-        [Authorize(Roles = "Admin,Member")]
+        [Authorize(Roles = $"{RolesNames.Admin},{RolesNames.Member}")]
         public IActionResult Create()
         {
             ViewData["VehicleTypeId"] = new SelectList(_context.VehicleTypes.OrderBy(v => v.Name), "Id", "Name");
@@ -76,7 +81,7 @@ namespace Garage_3._0.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Member")]
+        [Authorize(Roles = $"{RolesNames.Admin},{RolesNames.Member}")]
         public async Task<IActionResult> Create(
                 [Bind("LicenseNumber,Model,Color,NumberOfWheels,VehicleTypeId")] Vehicle vehicle,
                 string? ownerId
