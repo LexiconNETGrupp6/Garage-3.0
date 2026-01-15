@@ -4,6 +4,7 @@ using Bogus.Extensions.Sweden;
 using Garage_3._0.ConstantValues;
 using Garage_3._0.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Garage_3._0.Data
 {
@@ -29,8 +30,8 @@ namespace Garage_3._0.Data
 
             await AddRolesAsync([RolesNames.Admin, RolesNames.Member]);
 
-            ApplicationUser admin = await CreateUserAsync("admin@garage.se", "Admin", "Adminsson", "19800101-1111", "P@55w.rD!");
-            ApplicationUser member = await CreateUserAsync("member@garage.se", "User", "Usersson", "19760101-1111", "P@55w.rD!");
+            ApplicationUser admin = await CreateUserAsync("admin@garage.se", "Admin", "Adminsson", "198001011111", "P@55w.rD!");
+            ApplicationUser member = await CreateUserAsync("member@garage.se", "User", "Usersson", "197601011111", "P@55w.rD!");
 
             List<ApplicationUser> members = await GenerateUsers(30);
 
@@ -44,29 +45,36 @@ namespace Garage_3._0.Data
 
             List<ParkingSpot> parkingSpots = await GenerateParkingSpots(55);
             _context.ParkingSpots.AddRange(parkingSpots);
+            
+            await _context.SaveChangesAsync();
 
-            await JoinVehiclesAndVehicleTypes(vehicleTypes, vehicles);
-            await JoinUsersAndVehicles(members, vehicles);
-            await JoinVehiclesAndParkingSpots(vehicles, parkingSpots);
+            await JoinVehiclesAndVehicleTypes();
+            await JoinUsersAndVehicles();
+            await JoinVehiclesAndParkingSpots();
 
             await _context.SaveChangesAsync();
         }
 
-        private static async Task JoinVehiclesAndParkingSpots(List<Vehicle> vehicles, List<ParkingSpot> parkingSpots)
+        private static async Task JoinVehiclesAndParkingSpots()
         {
             throw new NotImplementedException();
         }
 
-        private static async Task JoinUsersAndVehicles(List<ApplicationUser> members, List<Vehicle> vehicles)
+        private static async Task JoinUsersAndVehicles()
         {
             throw new NotImplementedException();
         }
 
-        private static async Task JoinVehiclesAndVehicleTypes(List<VehicleType> vehicleTypes, List<Vehicle> vehicles)
+        private static async Task JoinVehiclesAndVehicleTypes()
         {
+            List<Vehicle> vehicles = await _context.Vehicles.ToListAsync();
+            List<VehicleType> vehicleTypes = await _context.VehicleTypes.ToListAsync();
+
             int numberOfVehicleTypes = vehicleTypes.Count();
             foreach (var vehicle in vehicles) {
-                vehicle.VehicleType = vehicleTypes[_rnd.Next(0, numberOfVehicleTypes)];
+                VehicleType type = vehicleTypes[_rnd.Next(0, numberOfVehicleTypes)];
+                vehicle.VehicleType = type;
+                vehicle.VehicleTypeId = type.Id;
             }
         }
 
