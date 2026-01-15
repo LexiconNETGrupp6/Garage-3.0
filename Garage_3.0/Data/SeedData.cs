@@ -32,17 +32,17 @@ namespace Garage_3._0.Data
             ApplicationUser admin = await CreateUserAsync("admin@garage.se", "Admin", "Adminsson", "19800101-1111", "P@55w.rD!");
             ApplicationUser member = await CreateUserAsync("member@garage.se", "User", "Usersson", "19760101-1111", "P@55w.rD!");
 
-            IEnumerable<ApplicationUser> members = await GenerateUsers(30);
+            List<ApplicationUser> members = await GenerateUsers(30);
 
-            IEnumerable<VehicleType> vehicleTypes = await GenerateVehicleTypes();
+            List<VehicleType> vehicleTypes = await GenerateVehicleTypes();
             _context.VehicleTypes.AddRange(vehicleTypes);
 
 
-            IEnumerable<Vehicle> vehicles = await GenerateVehicles(40);
+            List<Vehicle> vehicles = await GenerateVehicles(40);
             _context.Vehicles.AddRange(vehicles);
 
 
-            IEnumerable<ParkingSpot> parkingSpots = await GenerateParkingSpots(55);
+            List<ParkingSpot> parkingSpots = await GenerateParkingSpots(55);
             _context.ParkingSpots.AddRange(parkingSpots);
 
             await JoinVehiclesAndVehicleTypes(vehicleTypes, vehicles);
@@ -52,24 +52,27 @@ namespace Garage_3._0.Data
             await _context.SaveChangesAsync();
         }
 
-        private static async Task JoinVehiclesAndParkingSpots(IEnumerable<Vehicle> vehicles, IEnumerable<ParkingSpot> parkingSpots)
+        private static async Task JoinVehiclesAndParkingSpots(List<Vehicle> vehicles, List<ParkingSpot> parkingSpots)
         {
             throw new NotImplementedException();
         }
 
-        private static async Task JoinUsersAndVehicles(IEnumerable<ApplicationUser> members, IEnumerable<Vehicle> vehicles)
+        private static async Task JoinUsersAndVehicles(List<ApplicationUser> members, List<Vehicle> vehicles)
         {
             throw new NotImplementedException();
         }
 
-        private static async Task JoinVehiclesAndVehicleTypes(IEnumerable<VehicleType> vehicleTypes, IEnumerable<Vehicle> vehicles)
+        private static async Task JoinVehiclesAndVehicleTypes(List<VehicleType> vehicleTypes, List<Vehicle> vehicles)
         {
-            throw new NotImplementedException();
+            int numberOfVehicleTypes = vehicleTypes.Count();
+            foreach (var vehicle in vehicles) {
+                vehicle.VehicleType = vehicleTypes[_rnd.Next(0, numberOfVehicleTypes)];
+            }
         }
 
-        private static async Task<IEnumerable<VehicleType>> GenerateVehicleTypes()
+        private static async Task<List<VehicleType>> GenerateVehicleTypes()
         {
-            ICollection<VehicleType> vehicleTypes = [];
+            List<VehicleType> vehicleTypes = [];
             vehicleTypes.Add(new VehicleType { Name = "Boat", Size = 2 });
             vehicleTypes.Add(new VehicleType { Name = "Bus", Size = 3 });
             vehicleTypes.Add(new VehicleType { Name = "Car", Size = 1 });
@@ -79,9 +82,9 @@ namespace Garage_3._0.Data
             return vehicleTypes;
         }
 
-        private static async Task<IEnumerable<ParkingSpot>> GenerateParkingSpots(int numberOfSpots)
+        private static async Task<List<ParkingSpot>> GenerateParkingSpots(int numberOfSpots)
         {
-            ICollection<ParkingSpot> spots = [];
+            List<ParkingSpot> spots = [];
             for (int i = 0; i < numberOfSpots; i++) {
                 spots.Add(new() {
                     Size = _rnd.Next(1, 5),
@@ -91,9 +94,9 @@ namespace Garage_3._0.Data
             return spots;
         }        
 
-        private static async Task<IEnumerable<Vehicle>> GenerateVehicles(int numberOfVehicles)
-        {            
-            ICollection<Vehicle> vehicles = [];
+        private static async Task<List<Vehicle>> GenerateVehicles(int numberOfVehicles)
+        {
+            List<Vehicle> vehicles = [];
 
             // First vehicle using DateTime.Now to get a recent time
             vehicles.Add(new Vehicle {
@@ -126,9 +129,9 @@ namespace Garage_3._0.Data
             return vehicles;
         }
 
-        private static async Task<IEnumerable<ApplicationUser>> GenerateUsers(int numberOfUsers)
+        private static async Task<List<ApplicationUser>> GenerateUsers(int numberOfUsers)
         {
-            ICollection<ApplicationUser> members = [];
+            List<ApplicationUser> members = [];
             for (int i = 0; i < numberOfUsers; i++) {
                 members.Add(await CreateUserAsync(
                     email: _faker.Internet.Email(),
