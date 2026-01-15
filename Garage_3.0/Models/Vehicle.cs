@@ -15,5 +15,6 @@
         public int VehicleTypeId { get; set; }
         public VehicleType? VehicleType { get; set; }
         public ICollection<ParkingSpot> ParkingSpots { get; set; } = [];
+        public ICollection<Parking> Parkings { get; set; } = new List<Parking>();
     }
 }

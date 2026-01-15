@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Garage_3._0.Models.ViewModels;
 
 namespace Garage_3._0.Data
 {
@@ -19,5 +20,6 @@ namespace Garage_3._0.Data
                 .HasIndex(u => u.PersonalNumber)
                 .IsUnique();
         }
+        public DbSet<Garage_3._0.Models.ViewModels.MemberViewModel> MemberViewModel { get; set; } = default!;
     }
 }

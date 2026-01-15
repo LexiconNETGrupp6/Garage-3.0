@@ -4,6 +4,7 @@ using Garage_3._0.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Garage_3._0.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260115130954_AddIsProMember")]
+    partial class AddIsProMember
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -156,11 +159,6 @@ namespace Garage_3._0.Data.Migrations
 
                     b.Property<int>("Size")
                         .HasColumnType("int");
-
-                    b.Property<string>("SpotNumber")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id");
 
@@ -421,7 +419,7 @@ namespace Garage_3._0.Data.Migrations
             modelBuilder.Entity("Garage_3._0.Models.Parking", b =>
                 {
                     b.HasOne("Garage_3._0.Models.ParkingSpot", "ParkingSpot")
-                        .WithMany("Parkings")
+                        .WithMany()
                         .HasForeignKey("ParkingSpotId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -534,11 +532,6 @@ namespace Garage_3._0.Data.Migrations
             modelBuilder.Entity("Garage_3._0.Models.ApplicationUser", b =>
                 {
                     b.Navigation("Vehicles");
-                });
-
-            modelBuilder.Entity("Garage_3._0.Models.ParkingSpot", b =>
-                {
-                    b.Navigation("Parkings");
                 });
 
             modelBuilder.Entity("Garage_3._0.Models.Vehicle", b =>
