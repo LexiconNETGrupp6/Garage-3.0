@@ -126,36 +126,38 @@ namespace Garage_3._0.Areas.Identity.Pages.Account
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
-                // Validate that first name is different from last name
-                if (Input.FirstName.Equals(Input.LastName, StringComparison.OrdinalIgnoreCase))
+
+                // Normalize inputs
+                Input.FirstName = (Input.FirstName ?? "").Trim();
+                Input.LastName = (Input.LastName ?? "").Trim();
+                Input.PersonalNumber = NormalizePersonalNumber(Input.PersonalNumber);
+
+                // Custom validation: FirstName != LastName
+                if (string.Equals(Input.FirstName, Input.LastName, StringComparison.OrdinalIgnoreCase))
                 {
-                    ModelState.AddModelError(string.Empty, "First name and last name cannot be the same.");
-                    return Page();
+                    ModelState.AddModelError("Input.LastName", "First name cannot be the same as last name.");
                 }
 
-                // Check if personal number already exists
-                var existingUser = await _userManager.Users
-                    .FirstOrDefaultAsync(u => u.PersonalNumber == Input.PersonalNumber);
+                // Custom validation: PersonalNumber must be unique
+                var personalExists = await _userManager.Users
+                    .AnyAsync(u => u.PersonalNumber == Input.PersonalNumber);
 
-                if (existingUser != null)
+                if (personalExists)
                 {
-                    ModelState.AddModelError(string.Empty, "This personal number is already registered.");
-                    return Page();
+                    ModelState.AddModelError("Input.PersonalNumber", "Personal number is already registered.");
                 }
 
-                // Parse date of birth from personal number
-                var dateOfBirth = ParseDateOfBirth(Input.PersonalNumber);
-
-                if (dateOfBirth == null)
+                // Stop if our custom validation failed
+                if (!ModelState.IsValid)
                 {
-                    ModelState.AddModelError(nameof(Input.PersonalNumber), "Invalid personal number.");
                     return Page();
                 }
 
                 var user = CreateUser();
                 user.FirstName = Input.FirstName;
                 user.LastName = Input.LastName;
-                user.PersonalNumber = Input.PersonalNumber;                
+                user.PersonalNumber = Input.PersonalNumber;
+
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
@@ -195,24 +197,7 @@ namespace Garage_3._0.Areas.Identity.Pages.Account
 
             // If we got this far, something failed, redisplay form
             return Page();
-        }
-
-        private DateTime? ParseDateOfBirth(string personalNumber)
-        {
-            try
-            {
-                var datePart = personalNumber.Split('-')[0];
-                var year = int.Parse(datePart.Substring(0, 4));
-                var month = int.Parse(datePart.Substring(4, 2));
-                var day = int.Parse(datePart.Substring(6, 2));
-
-                return new DateTime(year, month, day);
-            }
-            catch
-            {
-                return null;
-            }
-        }
+        }        
 
         private ApplicationUser CreateUser()
         {
@@ -235,6 +220,14 @@ namespace Garage_3._0.Areas.Identity.Pages.Account
                 throw new NotSupportedException("The default UI requires a user store with email support.");
             }
             return (IUserEmailStore<ApplicationUser>)_userStore;
+        }
+
+        private static string NormalizePersonalNumber(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+            // keep digits only (handles formats like 19900101-1234 or 900101-1234)
+            return new string(value.Where(char.IsDigit).ToArray());
         }
     }
 }
