@@ -2,6 +2,16 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
+using Garage_3._0.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -10,15 +20,6 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
-using Garage_3._0.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Logging;
 
 namespace Garage_3._0.Areas.Identity.Pages.Account
 {
@@ -71,6 +72,23 @@ namespace Garage_3._0.Areas.Identity.Pages.Account
         /// </summary>
         public class InputModel
         {
+
+
+            [Required]
+            [StringLength(50)]
+            [Display(Name = "First name")]
+            public string FirstName { get; set; }
+
+            [Required]
+            [StringLength(50)]
+            [Display(Name = "Last name")]
+            public string LastName { get; set; }
+
+            [Required]
+            [StringLength(13)]
+            [Display(Name = "Personal number")]
+            public string PersonalNumber { get; set; }
+
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -113,7 +131,38 @@ namespace Garage_3._0.Areas.Identity.Pages.Account
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
+
+                // Normalize inputs
+                Input.FirstName = (Input.FirstName ?? "").Trim();
+                Input.LastName = (Input.LastName ?? "").Trim();
+                Input.PersonalNumber = NormalizePersonalNumber(Input.PersonalNumber);
+
+                // Custom validation: FirstName != LastName
+                if (string.Equals(Input.FirstName, Input.LastName, StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError("Input.LastName", "First name cannot be the same as last name.");
+                }
+
+                // Custom validation: PersonalNumber must be unique
+                var personalExists = await _userManager.Users
+                    .AnyAsync(u => u.PersonalNumber == Input.PersonalNumber);
+
+                if (personalExists)
+                {
+                    ModelState.AddModelError("Input.PersonalNumber", "Personal number is already registered.");
+                }
+
+                // Stop if our custom validation failed
+                if (!ModelState.IsValid)
+                {
+                    return Page();
+                }
+
                 var user = CreateUser();
+                user.FirstName = Input.FirstName;
+                user.LastName = Input.LastName;
+                user.PersonalNumber = Input.PersonalNumber;
+
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
@@ -176,6 +225,14 @@ namespace Garage_3._0.Areas.Identity.Pages.Account
                 throw new NotSupportedException("The default UI requires a user store with email support.");
             }
             return (IUserEmailStore<ApplicationUser>)_userStore;
+        }
+
+        private static string NormalizePersonalNumber(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+            // keep digits only (handles formats like 19900101-1234 or 900101-1234)
+            return new string(value.Where(char.IsDigit).ToArray());
         }
     }
 }
