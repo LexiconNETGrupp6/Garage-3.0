@@ -1,4 +1,6 @@
-﻿namespace Garage_3._0.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Garage_3._0.Models
 {
     public class Vehicle
     {
@@ -12,7 +14,9 @@
 
         public string OwnerId { get; set; } = string.Empty;
         public ApplicationUser? Owner { get; set; }
-        public int VehicleTypeId { get; set; }
+
+        [Required(ErrorMessage = "Please select a vehicle type.")]
+        public int? VehicleTypeId { get; set; }
         public VehicleType? VehicleType { get; set; }
         public ICollection<ParkingSpot> ParkingSpots { get; set; } = [];
     }

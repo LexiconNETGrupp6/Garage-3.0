@@ -18,11 +18,6 @@
                 <span asp-validation-for="LicenseNumber" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="ParkedDuration" class="control-label"></label>
-                <input asp-for="ParkedDuration" class="form-control" />
-                <span asp-validation-for="ParkedDuration" class="text-danger"></span>
-            </div>
-            <div class="form-group">
                 <label asp-for="Model" class="control-label"></label>
                 <input asp-for="Model" class="form-control" />
                 <span asp-validation-for="Model" class="text-danger"></span>
@@ -37,18 +32,21 @@
                 <input asp-for="NumberOfWheels" class="form-control" />
                 <span asp-validation-for="NumberOfWheels" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="ArrivalTime" class="control-label"></label>
-                <input asp-for="ArrivalTime" class="form-control" />
-                <span asp-validation-for="ArrivalTime" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="OwnerId" class="control-label"></label>
-                <select asp-for="OwnerId" class ="form-control" asp-items="ViewBag.OwnerId"></select>
-            </div>
+            @if (User.IsInRole("Admin"))
+            {
+                <div class="form-group">
+                    <label for="OwnerId">Owner</label>
+                    <select name="OwnerId" class="form-control" asp-items="ViewBag.OwnerId">
+                        <option value="">Select owner</option>
+                    </select>
+                </div>
+            }
             <div class="form-group">
                 <label asp-for="VehicleTypeId" class="control-label"></label>
-                <select asp-for="VehicleTypeId" class ="form-control" asp-items="ViewBag.VehicleTypeId"></select>
+                <select asp-for="VehicleTypeId" class="form-control" asp-items="ViewBag.VehicleTypeId">
+                    <option value="">Select vehicle type</option>
+                </select>
+                <span asp-validation-for="VehicleTypeId" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />

@@ -16,9 +16,6 @@
                 @Html.DisplayNameFor(model => model.LicenseNumber)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.ParkedDuration)
-            </th>
-            <th>
                 @Html.DisplayNameFor(model => model.Model)
             </th>
             <th>
@@ -46,9 +43,6 @@
                 @Html.DisplayFor(modelItem => item.LicenseNumber)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.ParkedDuration)
-            </td>
-            <td>
                 @Html.DisplayFor(modelItem => item.Model)
             </td>
             <td>
@@ -61,10 +55,10 @@
                 @Html.DisplayFor(modelItem => item.ArrivalTime)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Owner.Id)
+                    @Html.DisplayFor(modelItem => item.Owner.Email)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.VehicleType.Id)
+                    @Html.DisplayFor(modelItem => item.VehicleType.Name)
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
