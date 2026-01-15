@@ -21,13 +21,22 @@ namespace Garage_3._0.Data
         {
             _context = context;
 
-
-            if (_context.Roles.Any()) return;
-
             _roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
             _userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
             _faker = new("sv");
             _rnd = new();
+
+            //  Seed VehicleTypes if missing (runs even if roles already exist)
+            if (!await _context.VehicleTypes.AnyAsync())
+            {
+                List<VehicleType> vehicleTypes = await GenerateVehicleTypes();
+                _context.AddRange(vehicleTypes);
+                await _context.SaveChangesAsync();
+            }
+
+            //  Seed Roles/Users ONLY once
+            bool hasRoles = await _context.Roles.AnyAsync();
+            if (hasRoles) return;
 
             await AddRolesAsync([RolesNames.Admin, RolesNames.Member]);
 
@@ -37,28 +46,24 @@ namespace Garage_3._0.Data
             await AddRoleToUserAsync(admin, RolesNames.Admin);
             await AddRoleToUserAsync(member, RolesNames.Member);
 
-            List<ApplicationUser> members = [admin, member, ..await GenerateUsers(30)];
-            foreach (ApplicationUser m in members) {
+            List<ApplicationUser> members = [admin, member, .. await GenerateUsers(30)];
+            foreach (ApplicationUser m in members)
+            {
                 await AddRoleToUserAsync(m, RolesNames.Member);
             }
 
-            List<VehicleType> vehicleTypes = await GenerateVehicleTypes();
-            _context.AddRange(vehicleTypes);
-            // Needs to save members and vehicles types to the db first
-            // so that their ID's can be used when creating vehicles
-            await _context.SaveChangesAsync();
-
+            // After users + types exist, create vehicles + parking spots
             List<Vehicle> vehicles = await GenerateVehicles(35);
             _context.AddRange(vehicles);
 
             List<ParkingSpot> parkingSpots = await GenerateParkingSpots(55);
             _context.AddRange(parkingSpots);
 
-            // Save the vehicles and parking spots so that they can be joined
             await _context.SaveChangesAsync();
 
             await JoinVehiclesAndParkingSpots();
         }
+
 
         private static async Task JoinVehiclesAndParkingSpots()
         {
