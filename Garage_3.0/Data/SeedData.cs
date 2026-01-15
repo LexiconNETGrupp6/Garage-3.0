@@ -13,6 +13,7 @@ namespace Garage_3._0.Data
         private static RoleManager<IdentityRole> _roleManager = default!;
         private static UserManager<ApplicationUser> _userManager = default!;
         private static Faker _faker = default!;
+        private static Random _rnd = default!;
 
         public static async Task InitAsync(ApplicationDbContext context, IServiceProvider services)
         {
@@ -24,6 +25,7 @@ namespace Garage_3._0.Data
             _roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
             _userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
             _faker = new("sv");
+            _rnd = new(10);
 
             await AddRolesAsync([RolesNames.Admin, RolesNames.Member]);
 
@@ -33,34 +35,69 @@ namespace Garage_3._0.Data
             /*IEnumerable<ApplicationUser> members = */await GenerateUsers(30);
 
             IEnumerable<Vehicle> vehicles = await GenerateVehicles(40);
-            _context.AddRange(vehicles);
+            _context.Vehicles.AddRange(vehicles);
 
+            await JoinUsersAndVehicles();
+
+            IEnumerable<ParkingSpot> parkingSpots = await GenerateParkingSpots(55);
+            _context.ParkingSpots.AddRange(parkingSpots);
+
+            await JoinVehiclesAndParkingSpots();
 
             await _context.SaveChangesAsync();
         }
 
-        private static async Task<IEnumerable<Vehicle>> GenerateVehicles(int numberOfVehicles)
+        private static async Task JoinVehiclesAndParkingSpots()
         {
-            Random rnd = new(10);
-            _faker = new("sv");
+            throw new NotImplementedException();
+        }
+
+        private static async Task<IEnumerable<ParkingSpot>> GenerateParkingSpots(int numberOfSpots)
+        {
+            for (int i = 0; i < numberOfSpots; i++) {
+
+            }
+            throw new NotImplementedException();
+        }
+
+        private static async Task JoinUsersAndVehicles()
+        {
+            // for i in range vehicles
+            //  user[i%users.Length].Vehicles.Add(vehicles[i]);
+            throw new NotImplementedException();
+        }
+
+        private static async Task<IEnumerable<Vehicle>> GenerateVehicles(int numberOfVehicles)
+        {            
             ICollection<Vehicle> vehicles = [];
-            for (int i = 0; i < numberOfVehicles; i++) {
+
+            // First vehicle using DateTime.Now to get a recent time
+            vehicles.Add(new Vehicle {
+                LicenseNumber = _faker.Random.Replace("### ??*"), // regex: /[A-Z]{3} \d{2}[A-Z0-9]/
+                ParkedDuration = TimeSpan.FromMinutes(_rnd.Next(601)),
+                Model = _faker.Vehicle.Model(),
+                Color = _faker.Commerce.Color(),
+                NumberOfWheels = _rnd.Next(0, 13),
+                ArrivalTime = DateTime.Now,
+            });
+
+            for (int i = 0; i < numberOfVehicles-1; i++) {
                 vehicles.Add(new Vehicle {
                     LicenseNumber = _faker.Random.Replace("### ??*"), // regex: /[A-Z]{3} \d{2}[A-Z0-9]/
-                    ParkedDuration = TimeSpan.FromMinutes(rnd.Next(601)),
+                    ParkedDuration = TimeSpan.FromMinutes(_rnd.Next(601)),
                     Model = _faker.Vehicle.Model(),
                     Color = _faker.Commerce.Color(),
-                    NumberOfWheels = rnd.Next(0, 13),
+                    NumberOfWheels = _rnd.Next(0, 13),
                     ArrivalTime = new DateTime(
-                        year: rnd.Next(2020, 2025),
-                        month: rnd.Next(1, 13),
-                        day: rnd.Next(1, 28),
-                        hour: rnd.Next(0, 24),
-                        minute: rnd.Next(0, 60),
-                        second: rnd.Next(0, 60)
+                        year: _rnd.Next(2024, 2026),
+                        month: _rnd.Next(1, 13),
+                        day: _rnd.Next(1, 28),
+                        hour: _rnd.Next(0, 24),
+                        minute: _rnd.Next(0, 60),
+                        second: _rnd.Next(0, 60)
                         ),
                 });
-            }
+            }            
 
             return vehicles;
         }
