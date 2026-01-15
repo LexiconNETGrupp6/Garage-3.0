@@ -2,6 +2,16 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
+using Garage_3._0.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -10,15 +20,6 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
-using Garage_3._0.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Logging;
 
 namespace Garage_3._0.Areas.Identity.Pages.Account
 {
@@ -80,6 +81,18 @@ namespace Garage_3._0.Areas.Identity.Pages.Account
             [Display(Name = "Email")]
             public string Email { get; set; }
 
+            [Required(ErrorMessage = "First name is required")]
+            [StringLength(50)]
+            [Display(Name = "First name")]
+            public string FirstName { get; set; }
+            [Required(ErrorMessage = "Last name is required")]
+            [StringLength(50)]
+            [Display(Name = "Last name")]
+            public string LastName { get; set; }
+            [Required(ErrorMessage = "Personal number is required")]
+            [RegularExpression(@"^\d{8}-\d{4}$", ErrorMessage = "Personal number must be in format YYYYMMDD-XXXX")]
+            [Display(Name = "Personal Number (YYYYMMDD-XXXX)")]
+            public string PersonalNumber { get; set; }
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -113,7 +126,36 @@ namespace Garage_3._0.Areas.Identity.Pages.Account
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
+                // Validate that first name is different from last name
+                if (Input.FirstName.Equals(Input.LastName, StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError(string.Empty, "First name and last name cannot be the same.");
+                    return Page();
+                }
+
+                // Check if personal number already exists
+                var existingUser = await _userManager.Users
+                    .FirstOrDefaultAsync(u => u.PersonalNumber == Input.PersonalNumber);
+
+                if (existingUser != null)
+                {
+                    ModelState.AddModelError(string.Empty, "This personal number is already registered.");
+                    return Page();
+                }
+
+                // Parse date of birth from personal number
+                var dateOfBirth = ParseDateOfBirth(Input.PersonalNumber);
+
+                if (dateOfBirth == null)
+                {
+                    ModelState.AddModelError(nameof(Input.PersonalNumber), "Invalid personal number.");
+                    return Page();
+                }
+
                 var user = CreateUser();
+                user.FirstName = Input.FirstName;
+                user.LastName = Input.LastName;
+                user.PersonalNumber = Input.PersonalNumber;                
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
@@ -153,6 +195,23 @@ namespace Garage_3._0.Areas.Identity.Pages.Account
 
             // If we got this far, something failed, redisplay form
             return Page();
+        }
+
+        private DateTime? ParseDateOfBirth(string personalNumber)
+        {
+            try
+            {
+                var datePart = personalNumber.Split('-')[0];
+                var year = int.Parse(datePart.Substring(0, 4));
+                var month = int.Parse(datePart.Substring(4, 2));
+                var day = int.Parse(datePart.Substring(6, 2));
+
+                return new DateTime(year, month, day);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private ApplicationUser CreateUser()
