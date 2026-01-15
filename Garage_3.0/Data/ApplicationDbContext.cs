@@ -10,5 +10,14 @@ namespace Garage_3._0.Data
         public DbSet<Vehicle> Vehicles { get; set; }
         public DbSet<ParkingSpot> ParkingSpots { get; set; }
         public DbSet<VehicleType> VehicleTypes { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<ApplicationUser>()
+                .HasIndex(u => u.PersonalNumber)
+                .IsUnique();
+        }
     }
 }
