@@ -11,7 +11,9 @@ namespace Garage_3._0.Extensions
             var context = services.GetRequiredService<ApplicationDbContext>();
             try {
                 await SeedData.InitAsync(context, services);
-            } catch (Exception) { }
+            } catch (Exception ex) {
+                Console.WriteLine(ex.ToString());
+            }
             return app;
         }
     }

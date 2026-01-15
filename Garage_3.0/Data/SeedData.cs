@@ -26,30 +26,31 @@ namespace Garage_3._0.Data
             _roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
             _userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
             _faker = new("sv");
-            _rnd = new(10);
+            _rnd = new();
 
             await AddRolesAsync([RolesNames.Admin, RolesNames.Member]);
 
             ApplicationUser admin = await CreateUserAsync("admin@garage.se", "Admin", "Adminsson", "198001011111", "P@55w.rD!");
             ApplicationUser member = await CreateUserAsync("member@garage.se", "User", "Usersson", "197601011111", "P@55w.rD!");
 
-            List<ApplicationUser> members = await GenerateUsers(30);
+            await AddRoleToUser(admin, RolesNames.Admin);
+            await AddRoleToUser(member, RolesNames.Member);
+
+            List<ApplicationUser> members = [admin, member, ..await GenerateUsers(30)];
 
             List<VehicleType> vehicleTypes = await GenerateVehicleTypes();
-            _context.VehicleTypes.AddRange(vehicleTypes);
-
+            _context.AddRange(vehicleTypes);
+            await _context.SaveChangesAsync();
 
             List<Vehicle> vehicles = await GenerateVehicles(40);
-            _context.Vehicles.AddRange(vehicles);
+            _context.AddRange(vehicles);
 
 
             List<ParkingSpot> parkingSpots = await GenerateParkingSpots(55);
-            _context.ParkingSpots.AddRange(parkingSpots);
-            
+            _context.AddRange(parkingSpots);
+
             await _context.SaveChangesAsync();
 
-            await JoinVehiclesAndVehicleTypes();
-            await JoinUsersAndVehicles();
             await JoinVehiclesAndParkingSpots();
 
             await _context.SaveChangesAsync();
@@ -57,25 +58,10 @@ namespace Garage_3._0.Data
 
         private static async Task JoinVehiclesAndParkingSpots()
         {
-            throw new NotImplementedException();
-        }
-
-        private static async Task JoinUsersAndVehicles()
-        {
-            throw new NotImplementedException();
-        }
-
-        private static async Task JoinVehiclesAndVehicleTypes()
-        {
             List<Vehicle> vehicles = await _context.Vehicles.ToListAsync();
-            List<VehicleType> vehicleTypes = await _context.VehicleTypes.ToListAsync();
+            List<ParkingSpot> parkingSpots = await _context.ParkingSpots.ToListAsync();
 
-            int numberOfVehicleTypes = vehicleTypes.Count();
-            foreach (var vehicle in vehicles) {
-                VehicleType type = vehicleTypes[_rnd.Next(0, numberOfVehicleTypes)];
-                vehicle.VehicleType = type;
-                vehicle.VehicleTypeId = type.Id;
-            }
+            throw new NotImplementedException();
         }
 
         private static async Task<List<VehicleType>> GenerateVehicleTypes()
@@ -104,7 +90,16 @@ namespace Garage_3._0.Data
 
         private static async Task<List<Vehicle>> GenerateVehicles(int numberOfVehicles)
         {
+            List<ApplicationUser> members = await _context.Users.ToListAsync();
+            List<VehicleType> vehicleTypes = await _context.VehicleTypes.ToListAsync();
+
             List<Vehicle> vehicles = [];
+
+            int vehicleTypeCount = vehicleTypes.Count;
+            int memberCount = members.Count;
+
+            ApplicationUser owner = members[0];
+            VehicleType type = vehicleTypes[_rnd.Next(0, vehicleTypeCount)];
 
             // First vehicle using DateTime.Now to get a recent time
             vehicles.Add(new Vehicle {
@@ -114,9 +109,15 @@ namespace Garage_3._0.Data
                 Color = _faker.Commerce.Color(),
                 NumberOfWheels = _rnd.Next(0, 13),
                 ArrivalTime = DateTime.Now,
+                Owner = owner,
+                OwnerId = owner.Id,
+                VehicleType = type,
+                VehicleTypeId = type.Id,
             });
 
-            for (int i = 0; i < numberOfVehicles-1; i++) {
+            for (int i = 1; i < numberOfVehicles; i++) {
+                owner = members[i % memberCount];
+                type = vehicleTypes[_rnd.Next(0, vehicleTypeCount)];
                 vehicles.Add(new Vehicle {
                     LicenseNumber = _faker.Random.Replace("??? ##*"), // regex: /[A-Z]{3} \d{2}[A-Z0-9]/
                     ParkedDuration = TimeSpan.FromMinutes(_rnd.Next(601)),
@@ -131,6 +132,10 @@ namespace Garage_3._0.Data
                         minute: _rnd.Next(0, 60),
                         second: _rnd.Next(0, 60)
                         ),
+                    Owner = owner,
+                    OwnerId = owner.Id,
+                    VehicleType = type,
+                    VehicleTypeId = type.Id,
                 });
             }            
 
@@ -146,7 +151,7 @@ namespace Garage_3._0.Data
                     fName: _faker.Name.FirstName(),
                     lName: _faker.Name.LastName(),
                     personalNumber: _faker.Person.Personnummer(),
-                    password: _faker.Internet.Password()
+                    password: "Aa111!"
                 ));
             }
             return members;
@@ -178,6 +183,14 @@ namespace Garage_3._0.Data
 
                 IdentityRole role = new() { Name = roleName };
                 var result = await _roleManager.CreateAsync(role);
+                if (!result.Succeeded) throw new Exception(string.Join("\n", result.Errors));
+            }
+        }
+
+        private static async Task AddRoleToUser(ApplicationUser user, string role)
+        {
+            if (!await _userManager.IsInRoleAsync(user, role)) {
+                var result = await _userManager.AddToRoleAsync(user, role);
                 if (!result.Succeeded) throw new Exception(string.Join("\n", result.Errors));
             }
         }
