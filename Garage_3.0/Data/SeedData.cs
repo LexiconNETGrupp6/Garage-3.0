@@ -44,7 +44,7 @@ namespace Garage_3._0.Data
             // so that their ID's can be used when creating vehicles
             await _context.SaveChangesAsync();
 
-            List<Vehicle> vehicles = await GenerateVehicles(40);
+            List<Vehicle> vehicles = await GenerateVehicles(35);
             _context.AddRange(vehicles);
 
             List<ParkingSpot> parkingSpots = await GenerateParkingSpots(55);
@@ -93,11 +93,11 @@ namespace Garage_3._0.Data
         private static async Task<List<VehicleType>> GenerateVehicleTypes()
         {
             List<VehicleType> vehicleTypes = [];
-            vehicleTypes.Add(new VehicleType { Name = "Boat", Size = 2 });
-            vehicleTypes.Add(new VehicleType { Name = "Bus", Size = 3 });
-            vehicleTypes.Add(new VehicleType { Name = "Car", Size = 1 });
+            vehicleTypes.Add(new VehicleType { Name = "Boat", Size = 3 });
+            vehicleTypes.Add(new VehicleType { Name = "Bus", Size = 4 });
+            vehicleTypes.Add(new VehicleType { Name = "Car", Size = 2 });
             vehicleTypes.Add(new VehicleType { Name = "Motorcycle", Size = 1 });
-            vehicleTypes.Add(new VehicleType { Name = "Truck", Size = 3 });
+            vehicleTypes.Add(new VehicleType { Name = "Truck", Size = 4 });
 
             return vehicleTypes;
         }
