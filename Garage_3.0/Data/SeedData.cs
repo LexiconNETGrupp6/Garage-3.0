@@ -40,11 +40,12 @@ namespace Garage_3._0.Data
 
             List<VehicleType> vehicleTypes = await GenerateVehicleTypes();
             _context.AddRange(vehicleTypes);
+            // Needs to save members and vehicles types to the db first
+            // so that their ID's can be used when creating vehicles
             await _context.SaveChangesAsync();
 
             List<Vehicle> vehicles = await GenerateVehicles(40);
             _context.AddRange(vehicles);
-
 
             List<ParkingSpot> parkingSpots = await GenerateParkingSpots(55);
             _context.AddRange(parkingSpots);
@@ -61,7 +62,7 @@ namespace Garage_3._0.Data
             List<Vehicle> vehicles = await _context.Vehicles.ToListAsync();
             List<ParkingSpot> parkingSpots = await _context.ParkingSpots.ToListAsync();
 
-            throw new NotImplementedException();
+            
         }
 
         private static async Task<List<VehicleType>> GenerateVehicleTypes()
@@ -116,6 +117,8 @@ namespace Garage_3._0.Data
             });
 
             for (int i = 1; i < numberOfVehicles; i++) {
+                // Takes the next member in line (loops at end)
+                // and a random vehicle type to assign to the vehicle
                 owner = members[i % memberCount];
                 type = vehicleTypes[_rnd.Next(0, vehicleTypeCount)];
                 vehicles.Add(new Vehicle {
@@ -124,6 +127,9 @@ namespace Garage_3._0.Data
                     Model = _faker.Vehicle.Model(),
                     Color = _faker.Commerce.Color(),
                     NumberOfWheels = _rnd.Next(0, 13),
+                    // Arrival time anytime during 2024 or 2025
+                    // I don't want to handle future cases (e.g. 2026/4/12) rn
+                    // so just one manual DateTime.Now before the loop
                     ArrivalTime = new DateTime(
                         year: _rnd.Next(2024, 2026),
                         month: _rnd.Next(1, 13),
@@ -151,6 +157,8 @@ namespace Garage_3._0.Data
                     fName: _faker.Name.FirstName(),
                     lName: _faker.Name.LastName(),
                     personalNumber: _faker.Person.Personnummer(),
+                    // Faker.Internet.Password can fail the password requirements
+                    // so, just uses a simple one that works
                     password: "Aa111!"
                 ));
             }
