@@ -18,6 +18,17 @@ namespace Garage_3._0.Data
             builder.Entity<ApplicationUser>()
                 .HasIndex(u => u.PersonalNumber)
                 .IsUnique();
+
+            builder.Entity<Vehicle>()
+                .HasIndex(v => v.LicenseNumber)
+                .IsUnique();
+
+            builder.Entity<VehicleType>().HasData(
+                new VehicleType { Id = 1, Name = "Car", Size = 1 },
+                new VehicleType { Id = 2, Name = "Motorcycle", Size = 1 },
+                new VehicleType { Id = 3, Name = "Bus", Size = 3 },
+                new VehicleType { Id = 4, Name = "Boat", Size = 4 }
+    );
         }
     }
 }

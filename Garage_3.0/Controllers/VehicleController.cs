@@ -7,23 +7,35 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Garage_3._0.Data;
 using Garage_3._0.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 namespace Garage_3._0.Controllers
 {
+    [Authorize]
     public class VehicleController : Controller
     {
         private readonly ApplicationDbContext _context;
-
-        public VehicleController(ApplicationDbContext context)
+        private readonly UserManager<ApplicationUser> _userManager;
+        public VehicleController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: Vehicle
+        [Authorize]
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Vehicles.Include(v => v.Owner).Include(v => v.VehicleType);
-            return View(await applicationDbContext.ToListAsync());
+            var userId = _userManager.GetUserId(User);
+
+            var vehicles = await _context.Vehicles
+                .Where(v => v.OwnerId == userId)
+                .Include(v => v.Owner)
+                .Include(v => v.VehicleType)
+                .ToListAsync();
+
+            return View(vehicles);
         }
 
         // GET: Vehicle/Details/5
@@ -47,28 +59,63 @@ namespace Garage_3._0.Controllers
         }
 
         // GET: Vehicle/Create
+        [Authorize(Roles = "Admin,Member")]
         public IActionResult Create()
         {
-            ViewData["OwnerId"] = new SelectList(_context.Users, "Id", "Id");
-            ViewData["VehicleTypeId"] = new SelectList(_context.VehicleTypes, "Id", "Id");
+            ViewData["VehicleTypeId"] = new SelectList(_context.VehicleTypes.OrderBy(v => v.Name), "Id", "Name");
+
+            if (User.IsInRole("Admin"))
+                ViewData["OwnerId"] = new SelectList(_context.Users.OrderBy(u => u.Email), "Id", "Email");
+
             return View();
         }
+
 
         // POST: Vehicle/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,LicenseNumber,ParkedDuration,Model,Color,NumberOfWheels,ArrivalTime,OwnerId,VehicleTypeId")] Vehicle vehicle)
+        [Authorize(Roles = "Admin,Member")]
+        public async Task<IActionResult> Create(
+                [Bind("LicenseNumber,Model,Color,NumberOfWheels,VehicleTypeId")] Vehicle vehicle,
+                string? ownerId
+)
         {
             if (ModelState.IsValid)
             {
+                vehicle.LicenseNumber = (vehicle.LicenseNumber ?? "").Replace(" ", "").ToUpperInvariant();
+
+                if (User.IsInRole("Admin"))
+                {
+                    vehicle.OwnerId = string.IsNullOrWhiteSpace(ownerId)
+                        ? _userManager.GetUserId(User)!
+                        : ownerId;
+                }
+                else
+                {
+                    vehicle.OwnerId = _userManager.GetUserId(User)!;
+                }
+
+                vehicle.ArrivalTime = DateTime.Now;
+
                 _context.Add(vehicle);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateException)
+                {
+                    ModelState.AddModelError("LicenseNumber", "License number must be unique.");
+                }
             }
-            ViewData["OwnerId"] = new SelectList(_context.Users, "Id", "Id", vehicle.OwnerId);
-            ViewData["VehicleTypeId"] = new SelectList(_context.VehicleTypes, "Id", "Id", vehicle.VehicleTypeId);
+
+            ViewData["VehicleTypeId"] = new SelectList(_context.VehicleTypes.OrderBy(v => v.Name), "Id", "Name", vehicle.VehicleTypeId);
+            if (User.IsInRole("Admin"))
+                ViewData["OwnerId"] = new SelectList(_context.Users.OrderBy(u => u.Email), "Id", "Email", ownerId);
+
             return View(vehicle);
         }
 
