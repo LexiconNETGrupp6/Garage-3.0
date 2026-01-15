@@ -17,7 +17,6 @@ namespace Garage_3._0.Extensions
             }
             return app;
         }
-
-        }
+        
     }
 }
