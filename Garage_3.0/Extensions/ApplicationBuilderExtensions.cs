@@ -13,6 +13,7 @@ namespace Garage_3._0.Extensions
                 await SeedData.InitAsync(context, services);
             } catch (Exception ex) {
                 Console.WriteLine(ex.ToString());
+                throw;
             }
             return app;
         }

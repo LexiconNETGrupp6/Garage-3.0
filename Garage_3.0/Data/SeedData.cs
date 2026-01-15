@@ -33,10 +33,13 @@ namespace Garage_3._0.Data
             ApplicationUser admin = await CreateUserAsync("admin@garage.se", "Admin", "Adminsson", "19800101-1111", "P@55w.rD!");
             ApplicationUser member = await CreateUserAsync("member@garage.se", "User", "Usersson", "19760101-1111", "P@55w.rD!");
 
-            await AddRoleToUser(admin, RolesNames.Admin);
-            await AddRoleToUser(member, RolesNames.Member);
+            await AddRoleToUserAsync(admin, RolesNames.Admin);
+            await AddRoleToUserAsync(member, RolesNames.Member);
 
             List<ApplicationUser> members = [admin, member, ..await GenerateUsers(30)];
+            foreach (ApplicationUser m in members) {
+                await AddRoleToUserAsync(m, RolesNames.Member);
+            }
 
             List<VehicleType> vehicleTypes = await GenerateVehicleTypes();
             _context.AddRange(vehicleTypes);
@@ -107,7 +110,7 @@ namespace Garage_3._0.Data
             List<ParkingSpot> spots = [];
             for (int i = 0; i < numberOfSpots; i++) {
                 spots.Add(new() {
-                    Size = _rnd.Next(1, 5),
+                    Size = _rnd.Next(1, 6),
                     IsTaken = false
                 });
             }
@@ -220,7 +223,7 @@ namespace Garage_3._0.Data
             }
         }
 
-        private static async Task AddRoleToUser(ApplicationUser user, string role)
+        private static async Task AddRoleToUserAsync(ApplicationUser user, string role)
         {
             if (!await _userManager.IsInRoleAsync(user, role)) {
                 var result = await _userManager.AddToRoleAsync(user, role);
