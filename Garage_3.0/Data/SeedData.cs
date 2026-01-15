@@ -1,7 +1,7 @@
-﻿
-using Bogus;
+﻿using Bogus;
 using Bogus.Extensions.Sweden;
 using Garage_3._0.ConstantValues;
+using Garage_3._0.Extensions;
 using Garage_3._0.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -30,8 +30,8 @@ namespace Garage_3._0.Data
 
             await AddRolesAsync([RolesNames.Admin, RolesNames.Member]);
 
-            ApplicationUser admin = await CreateUserAsync("admin@garage.se", "Admin", "Adminsson", "198001011111", "P@55w.rD!");
-            ApplicationUser member = await CreateUserAsync("member@garage.se", "User", "Usersson", "197601011111", "P@55w.rD!");
+            ApplicationUser admin = await CreateUserAsync("admin@garage.se", "Admin", "Adminsson", "19800101-1111", "P@55w.rD!");
+            ApplicationUser member = await CreateUserAsync("member@garage.se", "User", "Usersson", "19760101-1111", "P@55w.rD!");
 
             await AddRoleToUser(admin, RolesNames.Admin);
             await AddRoleToUser(member, RolesNames.Member);
@@ -50,19 +50,44 @@ namespace Garage_3._0.Data
             List<ParkingSpot> parkingSpots = await GenerateParkingSpots(55);
             _context.AddRange(parkingSpots);
 
+            // Save the vehicles and parking spots so that they can be joined
             await _context.SaveChangesAsync();
 
             await JoinVehiclesAndParkingSpots();
-
-            await _context.SaveChangesAsync();
         }
 
         private static async Task JoinVehiclesAndParkingSpots()
         {
             List<Vehicle> vehicles = await _context.Vehicles.ToListAsync();
-            List<ParkingSpot> parkingSpots = await _context.ParkingSpots.ToListAsync();
+            List<ParkingSpot> parkingSpots = await _context.ParkingSpots.OrderBy(p => p.Size).ToListAsync();
 
-            
+            foreach (var vehicle in vehicles) {
+                bool found = false;
+                // Loop through the parking spots...
+                for (int i = 0; i < parkingSpots.Count; i++) {
+                    // ...until that has enough space left is found
+                    if (!parkingSpots[i].IsTaken && await parkingSpots[i].GetRemaingSpace(_context) >= vehicle.VehicleType!.Size) {
+                        parkingSpots[i].Vehicles.Add(vehicle);
+                        vehicle.ParkingSpots.Add(parkingSpots[i]);
+
+                        if (await parkingSpots[i].GetRemaingSpace(_context) == 0)
+                            parkingSpots[i].IsTaken = true;
+
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    // This point should only be reached if a vehicle didn't get assigned a spot
+                    // Since vehicles need a spot, just throw an error and re-run the SeedData (probably not good practice)
+                    throw new Exception($"Vehicle {vehicle.Id} failed to find a space");
+                }
+            }
+
+            // NEEDED: updates the lists so that the database knows them
+            _context.UpdateRange(vehicles);
+            _context.UpdateRange(parkingSpots);
+            await _context.SaveChangesAsync();
         }
 
         private static async Task<List<VehicleType>> GenerateVehicleTypes()
