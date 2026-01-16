@@ -13,8 +13,11 @@ namespace Garage_3._0.Models
         public string LastName { get; set; } = string.Empty;
         [Required]
         [StringLength(13)] // YYYYMMDD-XXXX format
-        public string PersonalNumber { get; set; } = string.Empty;        
+        public string PersonalNumber { get; set; } = string.Empty;  
+        public bool IsProMember { get; set; } = false;
 
-        public ICollection<Vehicle> Vehicles { get; set; } = [];
+        public DateTime? ProMembershipExpiry { get; set; }
+
+        public ICollection<Vehicle> Vehicles { get; set; } = [];        
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Garage_3._0.ConstantValues;
 using Garage_3._0.Data;
 using Garage_3._0.Models;
+using Garage_3._0.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -69,13 +70,27 @@ namespace Garage_3._0.Controllers
             var vehicle = await _context.Vehicles
                 .Include(v => v.Owner)
                 .Include(v => v.VehicleType)
+                .Include(v => v.ParkingSpots)        
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (vehicle == null)
             {
                 return NotFound();
             }
 
-            return View(vehicle);
+            VehicleDetailsViewModel viewModel = new() {
+                Id = vehicle.Id,
+                LicenseNumber = vehicle.LicenseNumber,
+                VehicleType = vehicle.VehicleType,
+                Color = vehicle.Color,
+                Model = vehicle.Model,
+                NumberOfWheels = vehicle.NumberOfWheels,
+                ArrivalTime = vehicle.ArrivalTime,
+                OwnerName = $"{vehicle.Owner?.FirstName} {vehicle.Owner?.LastName}",
+                OwnerEmail = vehicle.Owner?.Email,
+                ParkingSpots = vehicle.ParkingSpots,
+            };
+
+            return View(viewModel);
         }
 
         // GET: Vehicle/Create

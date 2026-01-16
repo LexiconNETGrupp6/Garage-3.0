@@ -4,6 +4,7 @@ using Garage_3._0.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Garage_3._0.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260115130954_AddIsProMember")]
+    partial class AddIsProMember
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -43,16 +46,14 @@ namespace Garage_3._0.Data.Migrations
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsProMember")
                         .HasColumnType("bit");
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -73,8 +74,7 @@ namespace Garage_3._0.Data.Migrations
 
                     b.Property<string>("PersonalNumber")
                         .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("nvarchar(13)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
@@ -160,11 +160,6 @@ namespace Garage_3._0.Data.Migrations
                     b.Property<int>("Size")
                         .HasColumnType("int");
 
-                    b.Property<string>("SpotNumber")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
                     b.HasKey("Id");
 
                     b.ToTable("ParkingSpots");
@@ -187,7 +182,7 @@ namespace Garage_3._0.Data.Migrations
 
                     b.Property<string>("LicenseNumber")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Model")
                         .IsRequired()
@@ -207,9 +202,6 @@ namespace Garage_3._0.Data.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("LicenseNumber")
-                        .IsUnique();
 
                     b.HasIndex("OwnerId");
 
@@ -236,6 +228,40 @@ namespace Garage_3._0.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("VehicleTypes");
+                });
+
+            modelBuilder.Entity("Garage_3._0.Models.ViewModels.MemberViewModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActiveParkingCount")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsProMember")
+                        .HasColumnType("bit");
+
+                    b.PrimitiveCollection<string>("Roles")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("TotalCurrentCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("VehicleCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MemberViewModel");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -393,7 +419,7 @@ namespace Garage_3._0.Data.Migrations
             modelBuilder.Entity("Garage_3._0.Models.Parking", b =>
                 {
                     b.HasOne("Garage_3._0.Models.ParkingSpot", "ParkingSpot")
-                        .WithMany("Parkings")
+                        .WithMany()
                         .HasForeignKey("ParkingSpotId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -426,6 +452,15 @@ namespace Garage_3._0.Data.Migrations
                     b.Navigation("Owner");
 
                     b.Navigation("VehicleType");
+                });
+
+            modelBuilder.Entity("Garage_3._0.Models.ViewModels.MemberViewModel", b =>
+                {
+                    b.HasOne("Garage_3._0.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -497,11 +532,6 @@ namespace Garage_3._0.Data.Migrations
             modelBuilder.Entity("Garage_3._0.Models.ApplicationUser", b =>
                 {
                     b.Navigation("Vehicles");
-                });
-
-            modelBuilder.Entity("Garage_3._0.Models.ParkingSpot", b =>
-                {
-                    b.Navigation("Parkings");
                 });
 
             modelBuilder.Entity("Garage_3._0.Models.Vehicle", b =>
