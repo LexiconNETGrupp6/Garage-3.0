@@ -4,6 +4,22 @@
 @{
     ViewData["Title"] = "Members Management";
 }
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 <h1><i class="bi bi-people"></i> @ViewData["Title"]</h1>
 <hr />
 <p>
@@ -161,7 +177,14 @@ else
                             </a>
                             <a asp-action="Edit" asp-route-id="@member.User.Id" class="btn btn-sm btn-info" title="Edit">
                                 <i class="bi bi-eye"></i>Edit
-                            </a>                            
+                            </a>
+                            @if (!member.Roles.Contains("Admin"))
+                            {
+                                <a asp-action="Delete" asp-route-id="@member.User.Id"
+                                   class="btn btn-sm btn-danger">
+                                    <i class="bi bi-trash"></i> Delete
+                                </a>
+                            }
                         </td>
                     </tr>
                 }
