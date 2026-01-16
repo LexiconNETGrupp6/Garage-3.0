@@ -337,7 +337,6 @@ namespace Garage_3._0.Controllers
             return View(availableParkingSpots);
         }
 
-        [HttpPost]
         [Authorize]
         public async Task<IActionResult> ParkVehicleInSpot(int vehicleId, int spotId)
         {
