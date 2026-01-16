@@ -229,6 +229,7 @@ namespace Garage_3._0.Data
 
             var result = await _userManager.CreateAsync(user, password);
             if (!result.Succeeded) throw new Exception(string.Join("\n", result.Errors));
+
             return user;
         }
 
@@ -239,6 +240,7 @@ namespace Garage_3._0.Data
 
                 IdentityRole role = new() { Name = roleName };
                 var result = await _roleManager.CreateAsync(role);
+
                 if (!result.Succeeded) throw new Exception(string.Join("\n", result.Errors));
             }
         }
