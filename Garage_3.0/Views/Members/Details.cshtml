@@ -1,0 +1,240 @@
+﻿@model Garage_3._0.Models.ViewModels.MemberDetailsViewModel
+
+@{
+    ViewData["Title"] = "Member Details";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-person-badge"></i> Member Details</h1>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Members
+        </a>
+    </div>
+    <hr />
+
+    <div class="row">
+        <!-- Member Information Card -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-person-circle"></i> Personal Information</h4>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Name</dt>
+                        <dd class="col-sm-7">
+                            <strong>@Model.User.FirstName @Model.User.LastName</strong>
+                        </dd>
+
+                        <dt class="col-sm-5">Email</dt>
+                        <dd class="col-sm-7">@Model.User.Email</dd>
+
+                        <dt class="col-sm-5">Personal No.</dt>
+                        <dd class="col-sm-7">
+                            <code>@Model.User.PersonalNumber</code>
+                        </dd>
+
+                        <dt class="col-sm-5">Membership</dt>
+                        <dd class="col-sm-7">
+                            @if (Model.IsProMember)
+                            {
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-star-fill"></i> Pro Member
+                                </span>
+                                <br />
+                                <small class="text-muted">
+                                    Expires: @Model.User.ProMembershipExpiry?.ToString("yyyy-MM-dd")
+                                </small>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Basic Member</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-5">Roles</dt>
+                        <dd class="col-sm-7">
+                            @foreach (var role in Model.Roles)
+                            {
+                                <span class="badge bg-primary">@role</span>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Revenue Statistics Card -->
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h4><i class="bi bi-cash-stack"></i> Revenue Statistics</h4>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-7">Current Cost:</dt>
+                        <dd class="col-sm-5 text-end">
+                            <strong class="text-success">@Model.TotalCurrentCost.ToString("C")</strong>
+                        </dd>
+
+                        <dt class="col-sm-7">Historical Revenue:</dt>
+                        <dd class="col-sm-5 text-end">
+                            @Model.TotalHistoricalRevenue.ToString("C")
+                        </dd>
+
+                        <dt class="col-sm-7">Total Parkings:</dt>
+                        <dd class="col-sm-5 text-end">
+                            @Model.TotalParkings
+                        </dd>
+                    </dl>
+                    <hr />
+                    <div class="d-flex justify-content-between">
+                        <strong>Total Revenue:</strong>
+                        <strong class="text-success fs-5">@Model.TotalRevenue.ToString("C")</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicles Section -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h4><i class="bi bi-car-front"></i> Registered Vehicles (@Model.Vehicles.Count)</h4>
+                </div>
+                <div class="card-body">
+                    @if (!Model.Vehicles.Any())
+                    {
+                        <p class="text-muted">No vehicles registered.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Registration</th>
+                                        <th>Type</th>
+                                        <th>Brand/Model</th>
+                                        <th>Status</th>
+                                        <th>Current Parking</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var vehicle in Model.Vehicles)
+                                    {
+                                        var activeSession = vehicle.Parkings.FirstOrDefault(ps => ps.IsActive);
+                                        var isParked = activeSession != null;
+
+                                        <tr>
+                                            <td>
+                                                <strong>@vehicle.LicenseNumber</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">@vehicle.VehicleType.Name</span>
+                                            </td>
+                                            <td>@vehicle.Model @vehicle.Model</td>
+                                            <td>
+                                                @if (isParked)
+                                                {
+                                                    <span class="badge bg-success">🅿️ Parked</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Not Parked</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (isParked)
+                                                {
+                                                    <div>
+                                                        <strong>Spot:</strong>
+                                                        <span class="badge bg-primary">@activeSession.ParkingSpot.SpotNumber</span>
+                                                        <br />
+                                                        <small class="text-muted">
+                                                            Since: @activeSession.CheckInTime.ToString("yyyy-MM-dd HH:mm")
+                                                        </small>
+                                                        <br />
+                                                        <small class="text-success">
+                                                            <strong>Cost: @activeSession.CalculateCost(20m, Model.IsProMember).ToString("C")</strong>
+                                                        </small>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Active Parking Sessions -->
+            @if (Model.ActiveSessions.Any())
+            {
+                <div class="card border-warning">
+                    <div class="card-header bg-warning">
+                        <h4><i class="bi bi-p-square"></i> Active Parking Sessions (@Model.ActiveSessions.Count)</h4>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var session in Model.ActiveSessions)
+                        {
+                            var duration = session.GetParkingDuration();
+                            var currentCost = session.CalculateCost(20m, Model.IsProMember);
+
+                            <div class="card mb-3 border-success">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5 class="card-title">
+                                                @session.Vehicle.LicenseNumber
+                                                <span class="badge bg-info">@session.Vehicle.VehicleType.Name</span>
+                                            </h5>
+                                            <p class="mb-1">
+                                                <strong>Parking Spot:</strong>
+                                                <span class="badge bg-primary">@session.ParkingSpot.SpotNumber</span>
+                                            </p>                                            
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1">
+                                                <strong>Check-In:</strong>
+                                                @session.CheckInTime.ToString("yyyy-MM-dd HH:mm")
+                                            </p>
+                                            <p class="mb-1">
+                                                <strong>Duration:</strong>
+                                                @if (duration.TotalHours < 1)
+                                                {
+                                                    <span>@duration.Minutes minutes</span>
+                                                }
+                                                else if (duration.TotalDays < 1)
+                                                {
+                                                    <span>@((int)duration.TotalHours) hours @duration.Minutes minutes</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>@((int)duration.TotalDays) days @duration.Hours hours</span>
+                                                }
+                                            </p>
+                                            <p class="mb-0">
+                                                <strong>Current Cost:</strong>
+                                                <span class="text-success fs-5">@currentCost.ToString("C")</span>
+                                                @if (Model.IsProMember)
+                                                {
+                                                    <span class="badge bg-warning text-dark">20% Pro Discount Applied</span>
+                                                }
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
