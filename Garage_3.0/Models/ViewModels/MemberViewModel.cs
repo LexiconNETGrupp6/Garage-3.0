@@ -9,5 +9,6 @@
         public decimal TotalCurrentCost { get; set; }
         public bool IsProMember { get; set; }
         public List<string> Roles { get; set; }
+        public List<Vehicle> Vehicles { get; set; }
     }
 }

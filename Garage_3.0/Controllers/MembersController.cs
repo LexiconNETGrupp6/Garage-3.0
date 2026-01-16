@@ -62,6 +62,7 @@ namespace Garage_3._0.Controllers
             }
 
             var users = await usersQuery.ToListAsync();
+            var members = new List<MemberViewModel>();
 
             // Get vehicle counts and current costs for each user
             var memberDataList = new List<MemberViewModel>();
@@ -187,19 +188,24 @@ namespace Garage_3._0.Controllers
         }
 
         // GET: Members/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(string? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
-
-            var memberViewModel = await _context.Users.FindAsync(id);
-            if (memberViewModel == null)
-            {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
                 return NotFound();
-            }
-            return View(memberViewModel);
+
+            var model = new MemberViewModel
+            {
+                Id = user.Id,
+                IsProMember = user.IsProMember,
+                Roles = (await _userManager.GetRolesAsync(user)).ToList()
+            };
+
+            return View(model);            
         }
 
         // POST: Members/Edit/5
@@ -241,19 +247,11 @@ namespace Garage_3._0.Controllers
         // GET: Members/Delete/5
         public async Task<IActionResult> Delete(string? id)
         {
-            if (id == null)
-            {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
                 return NotFound();
-            }
 
-            var memberViewModel = await _context.Users
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (memberViewModel == null)
-            {
-                return NotFound();
-            }
-
-            return View(memberViewModel);
+            return View(user);
         }
 
         // POST: Members/Delete/5

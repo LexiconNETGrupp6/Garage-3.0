@@ -11,11 +11,10 @@ namespace Garage_3._0.Models
         [Required]
         [StringLength(50)]
         public string LastName { get; set; } = string.Empty;
-        public string PersonalNumber { get; set; } = string.Empty;
-        public bool IsProMember { get; set; }
         [Required]
         [StringLength(13)] // YYYYMMDD-XXXX format
-        public string PersonalNumber { get; set; } = string.Empty;        
+        public string PersonalNumber { get; set; } = string.Empty;  
+        public bool IsProMember { get; set; } = false;
 
         public DateTime? ProMembershipExpiry { get; set; }
 
