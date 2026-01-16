@@ -72,23 +72,6 @@ namespace Garage_3._0.Areas.Identity.Pages.Account
         /// </summary>
         public class InputModel
         {
-
-
-            [Required]
-            [StringLength(50)]
-            [Display(Name = "First name")]
-            public string FirstName { get; set; }
-
-            [Required]
-            [StringLength(50)]
-            [Display(Name = "Last name")]
-            public string LastName { get; set; }
-
-            [Required]
-            [StringLength(13)]
-            [Display(Name = "Personal number")]
-            public string PersonalNumber { get; set; }
-
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -98,6 +81,18 @@ namespace Garage_3._0.Areas.Identity.Pages.Account
             [Display(Name = "Email")]
             public string Email { get; set; }
 
+            [Required(ErrorMessage = "First name is required")]
+            [StringLength(50)]
+            [Display(Name = "First name")]
+            public string FirstName { get; set; }
+            [Required(ErrorMessage = "Last name is required")]
+            [StringLength(50)]
+            [Display(Name = "Last name")]
+            public string LastName { get; set; }
+            [Required(ErrorMessage = "Personal number is required")]
+            [RegularExpression(@"^\d{8}-\d{4}$", ErrorMessage = "Personal number must be in format YYYYMMDD-XXXX")]
+            [Display(Name = "Personal Number (YYYYMMDD-XXXX)")]
+            public string PersonalNumber { get; set; }
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -202,7 +197,7 @@ namespace Garage_3._0.Areas.Identity.Pages.Account
 
             // If we got this far, something failed, redisplay form
             return Page();
-        }
+        }        
 
         private ApplicationUser CreateUser()
         {

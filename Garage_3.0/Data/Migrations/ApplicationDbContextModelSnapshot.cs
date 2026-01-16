@@ -71,7 +71,7 @@ namespace Garage_3._0.Data.Migrations
 
                     b.Property<string>("PersonalNumber")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
@@ -101,9 +101,6 @@ namespace Garage_3._0.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
-
-                    b.HasIndex("PersonalNumber")
-                        .IsUnique();
 
                     b.ToTable("AspNetUsers", (string)null);
                 });

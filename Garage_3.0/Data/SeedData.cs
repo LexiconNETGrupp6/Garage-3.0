@@ -5,6 +5,7 @@ using Garage_3._0.Extensions;
 using Garage_3._0.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Garage_3._0.Data
 {
@@ -179,12 +180,26 @@ namespace Garage_3._0.Data
         private static async Task<List<ApplicationUser>> GenerateUsers(int numberOfUsers)
         {
             List<ApplicationUser> members = [];
+            List<string> personNumberList = [];
+
+            // Move DateTime.Now back by a random number of days, months, and years
+            // Add it to the list if it's unique
+            while (personNumberList.Count < numberOfUsers) {
+                DateTime date = DateTime.Now;
+                date = date.AddDays(_rnd.Next(-20, -1))
+                    .AddMonths(_rnd.Next(-30, 0))
+                    .AddYears(_rnd.Next(-80, -15));
+                string personNumber = _faker.Random.Replace($"{date.ToShortDateString().Replace("-", string.Empty)}-####");
+                if (!personNumberList.Contains(personNumber))
+                    personNumberList.Add(personNumber);
+            }
+
             for (int i = 0; i < numberOfUsers; i++) {
                 members.Add(await CreateUserAsync(
                     email: _faker.Internet.Email(),
                     fName: _faker.Name.FirstName(),
                     lName: _faker.Name.LastName(),
-                    personalNumber: _faker.Person.Personnummer(),
+                    personalNumber: personNumberList[i],
                     // Faker.Internet.Password can fail the password requirements
                     // so, just uses a simple one that works
                     password: "Aa111!"
