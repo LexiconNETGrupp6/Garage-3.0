@@ -1,14 +1,21 @@
-﻿namespace Garage_3._0.Models.ViewModels
+﻿using System.ComponentModel;
+
+namespace Garage_3._0.Models.ViewModels
 {
     public class VehicleDetailsViewModel
     {
         public int Id { get; set; }
+        [DisplayName("License Number")]
         public string LicenseNumber { get; set; } = string.Empty;
+        [DisplayName("Vehicle Type")]
         public VehicleType? VehicleType { get; set; } = default!;
         public string Color { get; set; } = string.Empty;
         public string Model { get; set; } = string.Empty;
+        [DisplayName("Number of Wheels")]
         public int NumberOfWheels { get; set; }
+        [DisplayName("Time of Arrival")]
         public DateTime ArrivalTime { get; set; }
+        [DisplayName("The Parked Duration")]
         public string ParkingDuration { get {
                 var ts = DateTime.Now - ArrivalTime;
                 field = string.Empty;
@@ -23,7 +30,9 @@
                     field += ts.Seconds == 1 ? "1 second " : $"{ts.Seconds} seconds ";
                 return field.Trim();
             } } = string.Empty;
+        [DisplayName("Owner's Name")]
         public string? OwnerName { get; set; }
+        [DisplayName("Owner's Email")]
         public string? OwnerEmail { get; set; }
         public IEnumerable<ParkingSpot> ParkingSpots { get; set; } = [];
     }

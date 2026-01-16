@@ -21,7 +21,7 @@
             @Html.DisplayNameFor(model => model.VehicleType)
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.VehicleType)
+            @Html.DisplayFor(model => model.VehicleType!.Name)
         </dd>
         <dt class = "col-sm-2">
             @Html.DisplayNameFor(model => model.Model)
@@ -65,7 +65,7 @@
             @Html.DisplayFor(model => model.VehicleType!.Name)
         </dd>
         <dt class="col-sm-2">
-            Vehicles is parked in @(Model.ParkingSpots.Count() > 1 ? "spots" : "spot"):
+            Vehicles is parked in @(Model.ParkingSpots.Count() > 1 ? "spots" : "spot")
         </dt>
         <dd class="col-sm-10">
             @foreach (ParkingSpot spot in Model.ParkingSpots)
