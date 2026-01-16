@@ -58,19 +58,20 @@
                 <span>(@Html.DisplayFor(model => model.OwnerEmail))</span>
             }
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.VehicleType)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.VehicleType!.Name)
-        </dd>
         <dt class="col-sm-2">
-            Vehicles is parked in @(Model.ParkingSpots.Count() > 1 ? "spots" : "spot")
+            @(
+                Model.ParkingSpots.Count() == 0 ?
+                "Vehicle is not parked"
+                : $"Vehicles is parked in {(Model.ParkingSpots.Count() > 1 ? "spots" : "spot")}"
+            )
         </dt>
         <dd class="col-sm-10">
-            @foreach (ParkingSpot spot in Model.ParkingSpots)
+            @if (Model.ParkingSpots.Any())
             {
-                <span>@spot.Id </span>
+                foreach (ParkingSpot spot in Model.ParkingSpots)
+                {
+                    <span>@spot.Id </span>
+                }                
             }
         </dd>
     </dl>
