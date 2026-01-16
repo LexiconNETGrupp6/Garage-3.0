@@ -21,7 +21,7 @@
                     field += ts.Minutes == 1 ? "1 minute " : $"{ts.Minutes} minutes ";
                 if (ts.Hours == 0 && ts.Seconds > 0)
                     field += ts.Seconds == 1 ? "1 second " : $"{ts.Seconds} seconds ";
-                return field;
+                return field.Trim();
             } } = string.Empty;
         public string? OwnerName { get; set; }
         public string? OwnerEmail { get; set; }
