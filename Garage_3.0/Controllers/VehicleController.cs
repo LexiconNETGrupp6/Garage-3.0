@@ -337,10 +337,15 @@ namespace Garage_3._0.Controllers
             return View(availableParkingSpots);
         }
 
-        [HttpPost, ActionName(nameof(ParkVehicle))]
+        [HttpPost]
         [Authorize]
-        public async Task<IActionResult> ParkVehicleInSpot(int vehicleId, int spotId) // 36 3
+        public async Task<IActionResult> ParkVehicleInSpot(int vehicleId, int spotId)
         {
+            ApplicationUser? user = await _context.Users.FirstOrDefaultAsync(u => u.Email == User.Identity!.Name);
+            if (user is null || user.GetAge() < 18) {
+                return NotFound("Too young");
+            }
+
             Vehicle? vehicle = await _context.Vehicles
                 .FirstOrDefaultAsync(v => v.Id == vehicleId);
             if (vehicle is null) {
@@ -368,6 +373,54 @@ namespace Garage_3._0.Controllers
             parkingSpot.Parkings.Add(parking);
 
             _context.UpdateRange(vehicle, parkingSpot);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [Authorize]
+        public async Task<IActionResult> RemoveVehicleFromSpot(int? id)
+        {
+            /*
+             * Removes everything from Vehicle.ParkingSpots & Vehicle.Parkings, and 
+             * everything from ParkingSpot.Vehicles & ParkingSpot.Parkings where Vehicle.Id match
+             */
+
+            Vehicle? vehicle = await _context.Vehicles
+                .Include(v => v.ParkingSpots)
+                    .ThenInclude(p => p.Parkings)
+                .Include(v => v.ParkingSpots)
+                    .ThenInclude(p => p.Vehicles)
+                .Include(v => v.Parkings)
+                .FirstOrDefaultAsync(v => v.Id == id);
+            if (vehicle is null) {
+                return NotFound();
+            }
+
+            List<ParkingSpot> parkingSpots = await _context.ParkingSpots
+                .Include(p => p.Vehicles)
+                .Include(p => p.Parkings)
+                .ToListAsync();
+
+            for (int i = 0; i < parkingSpots.Count; i++) {
+                if (!parkingSpots[i].Vehicles.Contains(vehicle)) {
+                    parkingSpots.Remove(parkingSpots[i]);
+                    i--;
+                }
+            }
+
+            for (int i = 0; i < parkingSpots.Count; i++) {
+                vehicle.ParkingSpots.Remove(parkingSpots[i]);
+                parkingSpots[i].Vehicles.Remove(vehicle);
+                List<Parking> parkings = vehicle.Parkings.Where(p => p.VehicleId == vehicle.Id && p.ParkingSpotId == parkingSpots[i].Id).ToList();
+                for (int j = 0; j < parkings.Count; j++) {
+                    vehicle.Parkings.Remove(parkings[i]);
+                    parkingSpots[i].Parkings.Remove(parkings[i]);
+                }
+            }
+
+            _context.Vehicles.Update(vehicle);
+            _context.ParkingSpots.UpdateRange(parkingSpots);
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
