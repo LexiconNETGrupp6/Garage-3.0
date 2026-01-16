@@ -26,8 +26,10 @@ namespace Garage_3._0.Controllers
 
         // GET: Vehicle
         [Authorize]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? search)
         {
+            ViewData["CurrentFilter"] = search;
+
             var query = _context.Vehicles
                 .Include(v => v.Owner)
                 .Include(v => v.VehicleType)
@@ -37,6 +39,19 @@ namespace Garage_3._0.Controllers
             {
                 var userId = _userManager.GetUserId(User);
                 query = query.Where(v => v.OwnerId == userId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim();
+                var sPlate = s.Replace(" ", "").ToUpperInvariant();
+
+                query = query.Where(v =>
+                    v.LicenseNumber.Contains(sPlate) ||
+                    v.Model.Contains(s) ||
+                    v.Color.Contains(s) ||
+                    v.VehicleType!.Name.Contains(s)
+                );
             }
 
             var vehicles = await query.ToListAsync();
