@@ -82,6 +82,21 @@ namespace Garage_3._0.Data
                         if (await parkingSpots[i].GetRemaingSpace(_context) == 0)
                             parkingSpots[i].IsTaken = true;
 
+                        Parking parking = new() {
+                            VehicleId = vehicle.Id,
+                            ParkingSpotId = parkingSpots[i].Id,
+                            Vehicle = vehicle,
+                            ParkingSpot = parkingSpots[i],
+                            CheckInTime = DateTime.Now
+                                .AddSeconds(_rnd.Next(-59, 1))
+                                .AddMinutes(_rnd.Next(-59, 1))
+                                .AddHours(_rnd.Next(-23, 1))
+                                .AddDays(_rnd.Next(-50, 1)),
+                            IsActive = true,
+                        };
+                        vehicle.Parkings.Add(parking);
+                        parkingSpots[i].Parkings.Add(parking);
+
                         found = true;
                         break;
                     }

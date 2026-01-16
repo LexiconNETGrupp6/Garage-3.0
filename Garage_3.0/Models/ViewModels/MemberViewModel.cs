@@ -1,6 +1,6 @@
 ﻿namespace Garage_3._0.Models.ViewModels
 {
-    public class MemberViewModel
+    public class MemberViewModel 
     {
         public string Id { get; set; }
         public ApplicationUser User { get; set; }
