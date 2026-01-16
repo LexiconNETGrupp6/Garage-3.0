@@ -280,9 +280,5 @@ namespace Garage_3._0.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private async Task<bool> MemberExists(string id)
-        {
-            return await _userManager.FindByIdAsync(id) != null;
-        }
     }
 }
