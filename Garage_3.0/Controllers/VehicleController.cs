@@ -1,4 +1,4 @@
-﻿using Garage_3._0.ConstantValues;
+using Garage_3._0.ConstantValues;
 using Garage_3._0.Data;
 using Garage_3._0.Models;
 using Garage_3._0.Models.ViewModels;
@@ -70,7 +70,7 @@ namespace Garage_3._0.Controllers
             var vehicle = await _context.Vehicles
                 .Include(v => v.Owner)
                 .Include(v => v.VehicleType)
-                .Include(v => v.ParkingSpots)        
+                .Include(v => v.ParkingSpots)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (vehicle == null)
             {
@@ -247,6 +247,40 @@ namespace Garage_3._0.Controllers
         private bool VehicleExists(int id)
         {
             return _context.Vehicles.Any(e => e.Id == id);
+        }
+
+        // [Authorize(Roles ="Admin")]
+		public async Task<IActionResult> Statistics()
+        {
+            var vehicles = await _context.Vehicles.ToListAsync();
+            var users = await _context.Users.ToListAsync();
+            var RevenuePerCustomer = new List<CustomerRevenue>();
+            double costPerMinute = 1;
+
+            for(int i=0; i<vehicles.Count; i++){
+                var vehicle = vehicles[i];
+                var OwnerId = vehicle.OwnerId;
+                var TotalMinutes = vehicle.ParkedDuration.TotalMinutes;
+                var cost = TotalMinutes * costPerMinute;
+                int index = RevenuePerCustomer.FindIndex(customer=>customer.CustomerId == OwnerId);
+                if(index == -1) {
+                    int userIndex = users.FindIndex(user => user.Id == OwnerId);
+                    var user = users[userIndex];
+                    var PersonalNumber = user.PersonalNumber;
+                    var FirstName = user.FirstName;
+                    var LastName = user.LastName;
+                    RevenuePerCustomer.Add( new(PersonalNumber, cost, FirstName, LastName) );
+                } else {
+                    RevenuePerCustomer[index].RevenueAmount += cost;
+                }
+            }
+
+            RevenuePerCustomer = [.. RevenuePerCustomer.OrderByDescending(x => x.RevenueAmount).Take(5)];
+
+            var stats = new StatisticsViewModel{
+				RevenuePerCustomer = RevenuePerCustomer,
+            };
+            return View(stats);
         }
     }
 }

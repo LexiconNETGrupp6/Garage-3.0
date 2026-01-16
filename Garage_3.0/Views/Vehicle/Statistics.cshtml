@@ -1,0 +1,38 @@
+@using System.Globalization
+@model Garage_3._0.Models.StatisticsViewModel
+<h2 class="mb-4">Garage Statistics</h2>
+
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.RevenuePerCustomer.First().CustomerId)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.RevenuePerCustomer.First().CustomerName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.RevenuePerCustomer.First().RevenueAmount)
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model.RevenuePerCustomer) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.CustomerId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CustomerName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.RevenueAmount)
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
+
+
+<a asp-action="Index" class="btn btn-secondary">Back</a>
