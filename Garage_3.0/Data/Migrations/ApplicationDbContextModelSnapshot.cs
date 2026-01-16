@@ -232,40 +232,6 @@ namespace Garage_3._0.Data.Migrations
                     b.ToTable("VehicleTypes");
                 });
 
-            modelBuilder.Entity("Garage_3._0.Models.ViewModels.MemberViewModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ActiveParkingCount")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsProMember")
-                        .HasColumnType("bit");
-
-                    b.PrimitiveCollection<string>("Roles")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("TotalCurrentCost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("VehicleCount")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("MemberViewModel");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -454,15 +420,6 @@ namespace Garage_3._0.Data.Migrations
                     b.Navigation("Owner");
 
                     b.Navigation("VehicleType");
-                });
-
-            modelBuilder.Entity("Garage_3._0.Models.ViewModels.MemberViewModel", b =>
-                {
-                    b.HasOne("Garage_3._0.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

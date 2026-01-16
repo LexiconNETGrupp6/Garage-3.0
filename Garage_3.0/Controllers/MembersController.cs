@@ -194,7 +194,7 @@ namespace Garage_3._0.Controllers
                 return NotFound();
             }
 
-            var memberViewModel = await _context.MemberViewModel.FindAsync(id);
+            var memberViewModel = await _context.Users.FindAsync(id);
             if (memberViewModel == null)
             {
                 return NotFound();
@@ -207,45 +207,46 @@ namespace Garage_3._0.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,VehicleCount,ActiveParkingCount,TotalCurrentCost,IsProMember,Roles")] MemberViewModel memberViewModel)
+        public async Task<IActionResult> Edit(string id, MemberViewModel model)
         {
-            if (id != memberViewModel.Id)
-            {
+            if (id != model.Id)
                 return NotFound();
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            user.IsProMember = model.IsProMember;
+
+            if (model.IsProMember && user.ProMembershipExpiry < DateTime.Now)
+            {
+                user.ProMembershipExpiry = DateTime.Now.AddDays(30);
             }
 
-            if (ModelState.IsValid)
+            await _userManager.UpdateAsync(user);
+
+            if (model.Roles != null)
             {
-                try
-                {
-                    _context.Update(memberViewModel);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!MemberViewModelExists(memberViewModel.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                var currentRoles = await _userManager.GetRolesAsync(user);
+                await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                await _userManager.AddToRolesAsync(user, model.Roles);
             }
-            return View(memberViewModel);
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Members/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(string? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var memberViewModel = await _context.MemberViewModel
+            var memberViewModel = await _context.Users
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (memberViewModel == null)
             {
@@ -258,21 +259,23 @@ namespace Garage_3._0.Controllers
         // POST: Members/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
-            var memberViewModel = await _context.MemberViewModel.FindAsync(id);
-            if (memberViewModel != null)
-            {
-                _context.MemberViewModel.Remove(memberViewModel);
-            }
+            if (id == null)
+                return NotFound();
 
-            await _context.SaveChangesAsync();
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            await _userManager.DeleteAsync(user);
+
             return RedirectToAction(nameof(Index));
         }
 
-        private bool MemberViewModelExists(int id)
+        private async Task<bool> MemberExists(string id)
         {
-            return _context.MemberViewModel.Any(e => e.Id == id);
+            return await _userManager.FindByIdAsync(id) != null;
         }
     }
 }

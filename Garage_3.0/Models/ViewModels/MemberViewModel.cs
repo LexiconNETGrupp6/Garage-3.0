@@ -2,7 +2,7 @@
 {
     public class MemberViewModel
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
         public ApplicationUser User { get; set; }
         public int VehicleCount { get; set; }
         public int ActiveParkingCount { get; set; }

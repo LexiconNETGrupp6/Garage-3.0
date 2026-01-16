@@ -20,6 +20,5 @@ namespace Garage_3._0.Data
                 .HasIndex(u => u.PersonalNumber)
                 .IsUnique();
         }
-        public DbSet<Garage_3._0.Models.ViewModels.MemberViewModel> MemberViewModel { get; set; } = default!;
     }
 }
