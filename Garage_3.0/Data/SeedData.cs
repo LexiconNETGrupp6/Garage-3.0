@@ -1,4 +1,4 @@
-﻿using Bogus;
+using Bogus;
 using Bogus.Extensions.Sweden;
 using Garage_3._0.ConstantValues;
 using Garage_3._0.Extensions;
@@ -136,7 +136,7 @@ namespace Garage_3._0.Data
                 });
             }
             return spots;
-        }        
+        }
 
         private static async Task<List<Vehicle>> GenerateVehicles(int numberOfVehicles)
         {
@@ -192,7 +192,7 @@ namespace Garage_3._0.Data
                     VehicleType = type,
                     VehicleTypeId = type.Id,
                 });
-            }            
+            }
 
             return vehicles;
         }
@@ -209,7 +209,7 @@ namespace Garage_3._0.Data
                 date = date.AddDays(_rnd.Next(-20, -1))
                     .AddMonths(_rnd.Next(-30, 0))
                     .AddYears(_rnd.Next(-80, -15));
-                string personNumber = _faker.Random.Replace($"{date.ToShortDateString().Replace("-", string.Empty)}-####");
+                string personNumber = _faker.Random.Replace($"{date.ToString("yyyyMMdd")}-####");
                 if (!personNumberList.Contains(personNumber))
                     personNumberList.Add(personNumber);
             }
