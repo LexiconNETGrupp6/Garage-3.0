@@ -254,13 +254,24 @@ namespace Garage_3._0.Controllers
         }
 
         // GET: Members/Delete/5
-        public async Task<IActionResult> Delete(string? id)
-        {
+        public async Task<IActionResult> Delete(string id)
+        {            
+            if (id == null)
+                return NotFound();
+
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
                 return NotFound();
 
-            return View(user);
+            var model = new MemberViewModel
+            {
+                Id = user.Id,
+                User = user,
+                IsProMember = user.IsProMember,
+                Roles = (await _userManager.GetRolesAsync(user)).ToList()
+            };
+
+            return View(model);
         }
 
         // POST: Members/Delete/5
@@ -275,10 +286,33 @@ namespace Garage_3._0.Controllers
             if (user == null)
                 return NotFound();
 
+            var roles = await _userManager.GetRolesAsync(user);
+            if (roles.Contains("Admin"))
+            {
+                TempData["Error"] = "You cannot delete an Admin user.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["Success"] = "Member deleted successfully.";
+
+            var vehicles = await _context.Vehicles
+                .Include(v => v.Parkings)
+                .Where(v => v.OwnerId == id)
+                .ToListAsync();
+
+            foreach (var vehicle in vehicles)
+            {
+                _context.ParkingSpots.RemoveRange(vehicle.ParkingSpots);
+            }
+
+            _context.Vehicles.RemoveRange(vehicles);
+            await _context.SaveChangesAsync();
+
             await _userManager.DeleteAsync(user);
 
             return RedirectToAction(nameof(Index));
         }
+
 
     }
 }
