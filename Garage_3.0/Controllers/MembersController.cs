@@ -74,18 +74,18 @@ namespace Garage_3._0.Controllers
                     .Where(v => v.OwnerId == user.Id)
                     .ToListAsync();
 
-                //var activeParking = vehicles
-                //    .SelectMany(v => v.ParkingSpots.Where(ps => ps.IsTaken))
-                //    .ToList();
+                var activeParking = vehicles
+                    .SelectMany(v => v.Parkings.Where(ps => ps.IsActive))
+                    .ToList();
 
                 decimal totalCurrentCost = 0;
                 var hourlyRate = _configuration.GetValue<decimal>("GarageSettings:HourlyRate", 20m);
-                var isProMember = user.IsProMember && user.ProMembershipExpiry > DateTime.Now;
+                var isProMember = user.IsProMember;
 
-                //foreach (var session in activeParking)
-                //{
-                //    totalCurrentCost += session.CalculateCost(hourlyRate, isProMember);
-                //}
+                foreach (var session in activeParking)
+                {
+                    totalCurrentCost += session.CalculateCost(hourlyRate, isProMember);
+                }
 
                 var roles = await _userManager.GetRolesAsync(user);
 
@@ -93,7 +93,7 @@ namespace Garage_3._0.Controllers
                 {
                     User = user,
                     VehicleCount = vehicles.Count,
-                    //ActiveParkingCount = activeParking.Count,
+                    ActiveParkingCount = activeParking.Count,
                     TotalCurrentCost = totalCurrentCost,
                     IsProMember = isProMember,
                     Roles = roles.ToList()
@@ -201,6 +201,7 @@ namespace Garage_3._0.Controllers
             var model = new MemberViewModel
             {
                 Id = user.Id,
+                User = user,
                 IsProMember = user.IsProMember,
                 Roles = (await _userManager.GetRolesAsync(user)).ToList()
             };
@@ -218,6 +219,8 @@ namespace Garage_3._0.Controllers
             if (id != model.Id)
                 return NotFound();
 
+            ModelState.Remove("Vehicles");
+            ModelState.Remove("User");
             if (!ModelState.IsValid)
                 return View(model);
 
@@ -227,12 +230,18 @@ namespace Garage_3._0.Controllers
 
             user.IsProMember = model.IsProMember;
 
-            if (model.IsProMember && user.ProMembershipExpiry < DateTime.Now)
+            if (model.IsProMember && (user.ProMembershipExpiry == null || user.ProMembershipExpiry < DateTime.Now))
             {
                 user.ProMembershipExpiry = DateTime.Now.AddDays(30);
             }
 
-            await _userManager.UpdateAsync(user);
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError("", error.Description);
+                return View(model);
+            }
 
             if (model.Roles != null)
             {
@@ -271,9 +280,5 @@ namespace Garage_3._0.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private async Task<bool> MemberExists(string id)
-        {
-            return await _userManager.FindByIdAsync(id) != null;
-        }
     }
 }

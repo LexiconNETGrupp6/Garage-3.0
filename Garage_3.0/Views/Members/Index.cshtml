@@ -1,4 +1,5 @@
 ﻿@model IEnumerable<Garage_3._0.Models.ViewModels.MemberViewModel>
+@using System.Linq
 
 @{
     ViewData["Title"] = "Members Management";
@@ -8,7 +9,45 @@
 <p>
     <a asp-action="Create">Create New</a>
 </p>
-
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="bi bi-people-fill"></i></h5>
+                <h2 class="card-text">@Model.Count(m => m.IsProMember)</h2>
+                <p class="card-text">Pro Members</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="bi bi-star-fill"></i></h5>
+                <h2 class="card-text">@Model.Count(m => !m.IsProMember)</h2>
+                <p class="card-text">Basic Members</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="bi bi-car-front-fill"></i></h5>
+                <h2 class="card-text">@Model.Sum(m => m.VehicleCount)</h2>
+                <p class="card-text">Total Vehicles</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="bi bi-currency-dollar"></i></h5>
+                <h2 class="card-text">@Model.Sum(m => m.TotalCurrentCost).ToString("C")</h2>
+                <p class="card-text">Current Revenue</p>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Search and Filter -->
 <form asp-action="Index" method="get" class="mb-4">
     <div class="row g-3">
@@ -74,9 +113,12 @@ else
                                     <i class="bi bi-star-fill"></i> Pro
                                 </span>
                                 <br />
-                                <small class="text-muted">
-                                    Expires: @member.User.ProMembershipExpiry?.ToString("yyyy-MM-dd")
-                                </small>
+                                @if (member.User.ProMembershipExpiry.HasValue)
+                                {
+                                    <small class="text-muted">
+                                        Expires: @member.User.ProMembershipExpiry.Value.ToString("yyyy-MM-dd")
+                                    </small>
+                                }
                             }
                             else
                             {
@@ -117,6 +159,9 @@ else
                                class="btn btn-sm btn-info" title="View Details">
                                 <i class="bi bi-eye"></i> Details
                             </a>
+                            <a asp-action="Edit" asp-route-id="@member.User.Id" class="btn btn-sm btn-info" title="Edit">
+                                <i class="bi bi-eye"></i>Edit
+                            </a>                            
                         </td>
                     </tr>
                 }
@@ -136,52 +181,3 @@ else
         </table>
     </div>
 }
-@* <table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.VehicleCount)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ActiveParkingCount)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.TotalCurrentCost)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IsProMember)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Roles)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.VehicleCount)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ActiveParkingCount)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.TotalCurrentCost)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IsProMember)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Roles)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
- *@
