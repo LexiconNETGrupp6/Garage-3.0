@@ -1,4 +1,4 @@
-﻿using Garage_3._0.ConstantValues;
+using Garage_3._0.ConstantValues;
 using Garage_3._0.Data;
 using Garage_3._0.Extensions;
 using Garage_3._0.Models;
@@ -32,6 +32,8 @@ namespace Garage_3._0.Controllers
         public async Task<IActionResult> Index(string? search)
         {
             ViewData["CurrentFilter"] = search;
+            ViewData["ParkingSpotsTotal"] = await _context.ParkingSpots.CountAsync();
+            ViewData["ParkingSpotsAvailable"] = await _context.ParkingSpots.CountAsync(p => !p.IsTaken);
 
             var query = _context.Vehicles
                 .Include(v => v.Owner)
