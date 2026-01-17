@@ -36,6 +36,7 @@ namespace Garage_3._0.Controllers
             var query = _context.Vehicles
                 .Include(v => v.Owner)
                 .Include(v => v.VehicleType)
+                .Include(v => v.Parkings)
                 .AsQueryable();
 
             if (!User.IsInRole(RolesNames.Admin))
@@ -427,8 +428,6 @@ namespace Garage_3._0.Controllers
             _context.Vehicles.Update(vehicle);
             _context.ParkingSpots.UpdateRange(parkingSpots);
             await _context.SaveChangesAsync();
-
-            // Show checkout time + cost on new page perhaps
 
             return RedirectToAction(nameof(Index));
         }
