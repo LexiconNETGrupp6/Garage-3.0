@@ -72,12 +72,16 @@ namespace Garage_3._0.Controllers
             var vehicle = await _context.Vehicles
                 .Include(v => v.Owner)
                 .Include(v => v.VehicleType)
-                .Include(v => v.ParkingSpots)        
+                .Include(v => v.ParkingSpots)
+                .Include(v => v.Parkings)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (vehicle == null)
             {
                 return NotFound();
             }
+
+            Parking? parking = vehicle.Parkings.FirstOrDefault();
+            parking?.CheckInTime = vehicle.ArrivalTime;
 
             VehicleDetailsViewModel viewModel = new() {
                 Id = vehicle.Id,
@@ -90,6 +94,7 @@ namespace Garage_3._0.Controllers
                 OwnerName = $"{vehicle.Owner?.FirstName} {vehicle.Owner?.LastName}",
                 OwnerEmail = vehicle.Owner?.Email,
                 ParkingSpots = vehicle.ParkingSpots,
+                Parking = parking,
             };
 
             return View(viewModel);
@@ -366,6 +371,7 @@ namespace Garage_3._0.Controllers
                 IsActive = true
             };
 
+            vehicle.ArrivalTime = DateTime.Now;
             vehicle.Parkings.Add(parking);
             vehicle.ParkingSpots.Add(parkingSpot);
             parkingSpot.Vehicles.Add(vehicle);
@@ -421,6 +427,8 @@ namespace Garage_3._0.Controllers
             _context.Vehicles.Update(vehicle);
             _context.ParkingSpots.UpdateRange(parkingSpots);
             await _context.SaveChangesAsync();
+
+            // Show checkout time + cost on new page perhaps
 
             return RedirectToAction(nameof(Index));
         }
