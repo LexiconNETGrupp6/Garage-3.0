@@ -35,5 +35,6 @@ namespace Garage_3._0.Models.ViewModels
         [DisplayName("Owner's Email")]
         public string? OwnerEmail { get; set; }
         public IEnumerable<ParkingSpot> ParkingSpots { get; set; } = [];
+        public Parking? Parking { get; set; } = default!;
     }
 }

@@ -1,5 +1,6 @@
 using Garage_3._0.ConstantValues;
 using Garage_3._0.Data;
+using Garage_3._0.Extensions;
 using Garage_3._0.Models;
 using Garage_3._0.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,6 +38,7 @@ namespace Garage_3._0.Controllers
             var query = _context.Vehicles
                 .Include(v => v.Owner)
                 .Include(v => v.VehicleType)
+                .Include(v => v.Parkings)
                 .AsQueryable();
 
             if (!User.IsInRole(RolesNames.Admin))
@@ -73,11 +76,15 @@ namespace Garage_3._0.Controllers
                 .Include(v => v.Owner)
                 .Include(v => v.VehicleType)
                 .Include(v => v.ParkingSpots)
+                .Include(v => v.Parkings)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (vehicle == null)
             {
                 return NotFound();
             }
+
+            Parking? parking = vehicle.Parkings.FirstOrDefault();
+            parking?.CheckInTime = vehicle.ArrivalTime;
 
             VehicleDetailsViewModel viewModel = new() {
                 Id = vehicle.Id,
@@ -90,6 +97,7 @@ namespace Garage_3._0.Controllers
                 OwnerName = $"{vehicle.Owner?.FirstName} {vehicle.Owner?.LastName}",
                 OwnerEmail = vehicle.Owner?.Email,
                 ParkingSpots = vehicle.ParkingSpots,
+                Parking = parking,
             };
 
             return View(viewModel);
@@ -306,6 +314,124 @@ namespace Garage_3._0.Controllers
         private bool VehicleExists(int id)
         {
             return _context.Vehicles.Any(e => e.Id == id);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> ParkVehicle(int id)
+        {
+            Vehicle? vehicle = await _context.Vehicles
+                .Include(v => v.VehicleType)
+                .FirstOrDefaultAsync(v => v.Id == id);
+            if (vehicle is null) {
+                return NotFound();
+            }
+
+            int? size = vehicle.VehicleType?.Size;
+            IEnumerable<ParkingSpot> parkingSpots = await _context.ParkingSpots
+                .Where(p => !p.IsTaken)
+                .Include(p => p.Vehicles)
+                    .ThenInclude(v => v.VehicleType)
+                .ToListAsync();
+            ICollection<ParkingSpotViewModel> availableParkingSpots = [];
+            foreach (ParkingSpot parkingSpot in parkingSpots) {
+                if (await parkingSpot.GetRemaingSpace(_context) >= size)
+                    availableParkingSpots.Add(new ParkingSpotViewModel {
+                        Number = parkingSpot.Id,
+                        VehicleId = vehicle.Id,
+                        Vehicles = parkingSpot.Vehicles.Select(v => v.LicenseNumber)
+                    });
+            }
+
+            return View(availableParkingSpots);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> ParkVehicleInSpot(int vehicleId, int spotId)
+        {
+            ApplicationUser? user = await _context.Users.FirstOrDefaultAsync(u => u.Email == User.Identity!.Name);
+            if (user is null || user.GetAge() < 18) {
+                return NotFound("Too young");
+            }
+
+            Vehicle? vehicle = await _context.Vehicles
+                .FirstOrDefaultAsync(v => v.Id == vehicleId);
+            if (vehicle is null) {
+                return NotFound();
+            }
+
+            ParkingSpot? parkingSpot = await _context.ParkingSpots
+                .FirstOrDefaultAsync(p => p.Id == spotId);
+            if (parkingSpot is null) {
+                return NotFound();
+            }
+
+            Parking parking = new() {
+                VehicleId = vehicle.Id,
+                ParkingSpotId = parkingSpot.Id,
+                Vehicle = vehicle,
+                ParkingSpot = parkingSpot,
+                CheckInTime = DateTime.Now,
+                IsActive = true
+            };
+
+            vehicle.ArrivalTime = DateTime.Now;
+            vehicle.Parkings.Add(parking);
+            vehicle.ParkingSpots.Add(parkingSpot);
+            parkingSpot.Vehicles.Add(vehicle);
+            parkingSpot.Parkings.Add(parking);
+
+            _context.UpdateRange(vehicle, parkingSpot);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [Authorize]
+        public async Task<IActionResult> RemoveVehicleFromSpot(int? id)
+        {
+            /*
+             * Removes everything from Vehicle.ParkingSpots & Vehicle.Parkings, and 
+             * everything from ParkingSpot.Vehicles & ParkingSpot.Parkings where Vehicle.Id match
+             */
+
+            Vehicle? vehicle = await _context.Vehicles
+                .Include(v => v.ParkingSpots)
+                    .ThenInclude(p => p.Parkings)
+                .Include(v => v.ParkingSpots)
+                    .ThenInclude(p => p.Vehicles)
+                .Include(v => v.Parkings)
+                .FirstOrDefaultAsync(v => v.Id == id);
+            if (vehicle is null) {
+                return NotFound();
+            }
+
+            List<ParkingSpot> parkingSpots = await _context.ParkingSpots
+                .Include(p => p.Vehicles)
+                .Include(p => p.Parkings)
+                .ToListAsync();
+
+            for (int i = 0; i < parkingSpots.Count; i++) {
+                if (!parkingSpots[i].Vehicles.Contains(vehicle)) {
+                    parkingSpots.Remove(parkingSpots[i]);
+                    i--;
+                }
+            }
+
+            for (int i = 0; i < parkingSpots.Count; i++) {
+                vehicle.ParkingSpots.Remove(parkingSpots[i]);
+                parkingSpots[i].Vehicles.Remove(vehicle);
+                List<Parking> parkings = vehicle.Parkings.Where(p => p.VehicleId == vehicle.Id && p.ParkingSpotId == parkingSpots[i].Id).ToList();
+                for (int j = 0; j < parkings.Count; j++) {
+                    vehicle.Parkings.Remove(parkings[i]);
+                    parkingSpots[i].Parkings.Remove(parkings[i]);
+                }
+            }
+
+            _context.Vehicles.Update(vehicle);
+            _context.ParkingSpots.UpdateRange(parkingSpots);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }
