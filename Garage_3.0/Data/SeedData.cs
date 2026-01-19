@@ -36,39 +36,53 @@ namespace Garage_3._0.Data
 
             //  Seed Roles/Users ONLY once
             bool hasRoles = await _context.Roles.AnyAsync();
-            if (hasRoles) return;
-
-            await AddRolesAsync([RolesNames.Admin, RolesNames.Member]);
-
-            ApplicationUser admin = await CreateUserAsync("admin@garage.se", "Admin", "Adminsson", "19800101-1111", "P@55w.rD!");
-            ApplicationUser member = await CreateUserAsync("member@garage.se", "User", "Usersson", "19760101-1111", "P@55w.rD!");
-
-            await AddRoleToUserAsync(admin, RolesNames.Admin);
-            await AddRoleToUserAsync(member, RolesNames.Member);
-
-            List<ApplicationUser> members = [admin, member, .. await GenerateUsers(30)];
-            foreach (ApplicationUser m in members)
+            if (!hasRoles)
             {
-                await AddRoleToUserAsync(m, RolesNames.Member);
+                await AddRolesAsync([RolesNames.Admin, RolesNames.Member]);
+                
+                ApplicationUser admin = await CreateUserAsync("admin@garage.se", "Admin", "Adminsson", "19800101-1111", "P@55w.rD!");
+                ApplicationUser member = await CreateUserAsync("member@garage.se", "User", "Usersson", "19760101-1111", "P@55w.rD!");
+                
+                await AddRoleToUserAsync(admin, RolesNames.Admin);
+                await AddRoleToUserAsync(member, RolesNames.Member);
+                
+                List<ApplicationUser> members = [admin, member, .. await GenerateUsers(30)];
+                foreach (ApplicationUser m in members)
+                {
+                    await AddRoleToUserAsync(m, RolesNames.Member);
+                }
             }
 
             // After users + types exist, create vehicles + parking spots
-            List<Vehicle> vehicles = await GenerateVehicles(35);
-            _context.AddRange(vehicles);
-
-            List<ParkingSpot> parkingSpots = await GenerateParkingSpots(55);
-            _context.AddRange(parkingSpots);
+            if(!await _context.Vehicles.AnyAsync())
+            {
+                List<Vehicle> vehicles = await GenerateVehicles(35);
+                _context.AddRange(vehicles);
+            }
+            // Seed ParkingSpots (independent)
+            if (!await _context.ParkingSpots.AnyAsync())
+            {
+                List<ParkingSpot> parkingSpots = await GenerateParkingSpots(55);
+                _context.AddRange(parkingSpots);
+            }
 
             await _context.SaveChangesAsync();
-
-            await JoinVehiclesAndParkingSpots();
+            if (!await _context.ParkingSpots.AnyAsync())
+            {
+                await JoinVehiclesAndParkingSpots();
+            }
         }
-
 
         private static async Task JoinVehiclesAndParkingSpots()
         {
-            List<Vehicle> vehicles = await _context.Vehicles.ToListAsync();
-            List<ParkingSpot> parkingSpots = await _context.ParkingSpots.OrderBy(p => p.Size).ToListAsync();
+            List<Vehicle> vehicles = await _context.Vehicles.Include(v => v.VehicleType)
+                .Include(v => v.ParkingSpots)
+                .Include(v => v.Parkings)
+                .ToListAsync();
+            List<ParkingSpot> parkingSpots = await _context.ParkingSpots
+                .Include(p => p.Vehicles)
+                .Include(p => p.Parkings).
+                OrderBy(p => p.Size).ToListAsync();
 
             foreach (var vehicle in vehicles) {
                 bool found = false;
@@ -109,8 +123,8 @@ namespace Garage_3._0.Data
             }
 
             // NEEDED: updates the lists so that the database knows them
-            _context.UpdateRange(vehicles);
-            _context.UpdateRange(parkingSpots);
+            //_context.UpdateRange(vehicles);
+            //_context.UpdateRange(parkingSpots);
             await _context.SaveChangesAsync();
         }
 
@@ -131,6 +145,7 @@ namespace Garage_3._0.Data
             List<ParkingSpot> spots = [];
             for (int i = 0; i < numberOfSpots; i++) {
                 spots.Add(new() {
+                    SpotNumber = $"P{i}",
                     Size = _rnd.Next(1, 6),
                     IsTaken = false
                 });

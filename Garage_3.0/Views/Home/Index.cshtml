@@ -6,3 +6,85 @@
     <h1 class="display-4">Welcome to Garage 3.0 🚗</h1>
     <p class="lead">Modern parking management system</p>
 </div>
+
+@if (!User.Identity.IsAuthenticated)
+{
+    <div class="row mt-5">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3>Get Started</h3>
+                    <p>Register now to start using our parking management system!</p>
+                    <div class="d-grid gap-2">
+                        <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary btn-lg">
+                            Register Now
+                        </a>
+                        <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-outline-secondary">
+                            Already have an account? Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card mt-5">
+        <div class="card-body">
+            <h3>Quick Actions</h3>
+            <div class="d-flex flex-row flex-wrap gap-3 mt-3">
+                <a asp-controller="Vehicle" asp-action="Index" class="btn btn-outline-primary p-3 flex-fill">
+                    <i class="bi bi-car-front fs-3 d-block mb-2"></i>
+                    My Vehicles
+                </a>               
+
+                @if (User.IsInRole("Admin"))
+                {
+                    <a asp-controller="Members" asp-action="Index" class="btn btn-outline-secondary p-3 flex-fill">
+                        <i class="bi bi-people fs-3 d-block mb-2"></i>
+                        View Members
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+
+}
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-shield-check text-success"></i> Secure
+                </h5>
+                <p class="card-text">Your vehicles are safe with our 24/7 security monitoring.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-clock text-primary"></i> Convenient
+                </h5>
+                <p class="card-text">Easy online booking and management of your parking.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-star text-warning"></i> Pro Membership
+                </h5>
+                <p class="card-text">Get 20% discount on parking fees with Pro membership!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+}

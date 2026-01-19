@@ -380,6 +380,8 @@ namespace Garage_3._0.Controllers
             parkingSpot.Vehicles.Add(vehicle);
             parkingSpot.Parkings.Add(parking);
 
+            parkingSpot.IsTaken = true;
+
             _context.UpdateRange(vehicle, parkingSpot);
             await _context.SaveChangesAsync();
 
@@ -393,45 +395,96 @@ namespace Garage_3._0.Controllers
              * Removes everything from Vehicle.ParkingSpots & Vehicle.Parkings, and 
              * everything from ParkingSpot.Vehicles & ParkingSpot.Parkings where Vehicle.Id match
              */
+            if (id == null)
+                return NotFound();
 
             Vehicle? vehicle = await _context.Vehicles
-                .Include(v => v.ParkingSpots)
-                    .ThenInclude(p => p.Parkings)
-                .Include(v => v.ParkingSpots)
-                    .ThenInclude(p => p.Vehicles)
                 .Include(v => v.Parkings)
+                .ThenInclude(p => p.ParkingSpot)
+                .Include(v => v.ParkingSpots)
                 .FirstOrDefaultAsync(v => v.Id == id);
+
             if (vehicle is null) {
                 return NotFound();
             }
 
-            List<ParkingSpot> parkingSpots = await _context.ParkingSpots
-                .Include(p => p.Vehicles)
-                .Include(p => p.Parkings)
-                .ToListAsync();
+            List<Parking> activeParkings = vehicle.Parkings
+                .Where(p => p.IsActive)
+                .ToList();
 
-            for (int i = 0; i < parkingSpots.Count; i++) {
-                if (!parkingSpots[i].Vehicles.Contains(vehicle)) {
-                    parkingSpots.Remove(parkingSpots[i]);
-                    i--;
-                }
+            foreach (Parking parking in activeParkings)
+            {
+                parking.IsActive = false;                
+                parking.CheckOutTime = DateTime.Now;
+
+                parking.ParkingSpot.Vehicles.Remove(vehicle);
+                vehicle.ParkingSpots.Remove(parking.ParkingSpot);
+
+                parking.ParkingSpot.IsTaken = false;
             }
 
-            for (int i = 0; i < parkingSpots.Count; i++) {
-                vehicle.ParkingSpots.Remove(parkingSpots[i]);
-                parkingSpots[i].Vehicles.Remove(vehicle);
-                List<Parking> parkings = vehicle.Parkings.Where(p => p.VehicleId == vehicle.Id && p.ParkingSpotId == parkingSpots[i].Id).ToList();
-                for (int j = 0; j < parkings.Count; j++) {
-                    vehicle.Parkings.Remove(parkings[i]);
-                    parkingSpots[i].Parkings.Remove(parkings[i]);
-                }
-            }
-
-            _context.Vehicles.Update(vehicle);
-            _context.ParkingSpots.UpdateRange(parkingSpots);
+            _context.UpdateRange(activeParkings.Select(p => p.ParkingSpot));
+            _context.Update(vehicle);
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
+        }
+        public async Task<IActionResult> Park()
+        {
+            var userId = _userManager.GetUserId(User);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return RedirectToAction("Login", "Account", new { area = "Identity" });
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account", new { area = "Identity" });
+            }
+
+           
+            var allVehicles = await _context.Vehicles
+                .Where(v => v.OwnerId == userId)
+                .ToListAsync();
+
+            ViewBag.DebugTotalVehicles = allVehicles.Count;
+            ViewBag.DebugVehicles = string.Join(", ", allVehicles.Select(v => v.LicenseNumber));
+
+            // Get user's vehicles that are not currently parked
+            var availableVehicles = await _context.Vehicles
+                .Include(v => v.VehicleType)
+                .Include(v => v.Parkings)
+                .Where(v => v.OwnerId == userId && !v.Parkings.Any(ps => ps.IsActive))
+                .ToListAsync();
+
+            ViewBag.DebugAvailableVehicles = availableVehicles.Count;
+
+            if (!availableVehicles.Any())
+            {
+                var totalVehicles = await _context.Vehicles.CountAsync(v => v.OwnerId == userId);
+
+                if (totalVehicles == 0)
+                {
+                    TempData["Error"] = "You don't have any registered vehicles yet. Please register a vehicle first.";
+                }
+                else
+                {
+                    TempData["Error"] = "All your vehicles are already parked. Please check out a vehicle first from 'Parked Vehicles' page.";
+                }
+
+                return RedirectToAction("Index", "Vehicles");
+            }
+
+            ViewData["VehicleId"] = new SelectList(availableVehicles, "Id", "LicenseNumber");
+
+            // Also pass available parking count
+            var available = await _context.Parking.CountAsync(ps => !ps.IsActive);
+            ViewBag.AvailableSpots = available;
+
+            return View();
         }
     }
 }

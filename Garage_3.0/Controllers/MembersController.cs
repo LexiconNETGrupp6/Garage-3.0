@@ -70,7 +70,8 @@ namespace Garage_3._0.Controllers
             foreach (var user in users)
             {
                 var vehicles = await _context.Vehicles
-                    .Include(v => v.ParkingSpots.Where(ps => ps.IsTaken))
+                    .Include(v => v.Parkings)
+                    .Include(v => v.ParkingSpots)
                     .Where(v => v.OwnerId == user.Id)
                     .ToListAsync();
 

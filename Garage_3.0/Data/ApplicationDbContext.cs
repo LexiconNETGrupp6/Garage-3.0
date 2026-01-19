@@ -25,5 +25,6 @@ namespace Garage_3._0.Data
                 .IsUnique();
 
         }
+        public DbSet<Garage_3._0.Models.Parking> Parking { get; set; } = default!;
     }
 }

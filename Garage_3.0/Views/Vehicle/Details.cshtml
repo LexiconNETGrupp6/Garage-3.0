@@ -123,7 +123,7 @@
                     <span class="col-sm-6">Total Cost</span>
                     <span class="col-sm-6 text-end">
                         @{
-                            string cost = Model.Parking.CalculateCost().ToString("C");
+                            string cost = Model.Parking.CalculateCost().ToString("0 SEK");
                         }
                         Total Cost: @cost
                     </span>
