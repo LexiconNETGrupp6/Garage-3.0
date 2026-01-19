@@ -1,0 +1,42 @@
+﻿@model IEnumerable<ParkingSpotViewModel>
+
+@{
+    ViewData["Title"] = "ParkVehicle";
+}
+
+<h1>Select a Parking Spot</h1>
+<a asp-action="Index">Back to Vehicle List</a>
+<div class="container">
+    @foreach (ParkingSpotViewModel spot in Model)
+    {
+        <div class="row border border-3 my-3 rounded">
+            <div class="col-4">
+                <div>
+                    @spot.Number
+                </div>
+            </div>
+            <div class="col-4">
+                @if (spot.Vehicles.Any())
+                {
+                    <details>
+                        <summary>Other vehicles in this spot</summary>
+                        @foreach (string licenseNumber in spot.Vehicles)
+                        {
+                            <div class="d-block">@licenseNumber</div>
+                        }
+                    </details>
+                } else
+                {
+                    <p class="m-0">This spot is empty</p>
+                }
+            </div>
+            <div class="col-4">
+                <form asp-action="ParkVehicleInSpot" class="w-100">
+                    <input type="hidden" name="vehicleId" value="@spot.VehicleId" />
+                    <input type="hidden" name="spotId" value="@spot.Number" />
+                    <input type="submit" value="Park here" class="btn btn-primary w-100" />
+                </form>
+            </div>
+        </div>
+    }
+</div>

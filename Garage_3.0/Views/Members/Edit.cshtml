@@ -1,0 +1,55 @@
+﻿@model Garage_3._0.Models.ViewModels.MemberViewModel
+
+@{
+    ViewData["Title"] = "Edit Member";
+}
+
+<h1>Edit Member</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="Id" />
+            <div class="mb-3">
+                <label class="form-label">Name</label>
+                <input class="form-control" value="@Model.User.FirstName @Model.User.LastName" disabled />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input class="form-control" value="@Model.User.Email" disabled />
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" asp-for="IsProMember" id="IsProMember" />
+                <label class="form-check-label" for="IsProMember">Pro Member</label>
+                @if (Model.IsProMember)
+                {
+                    <span class="badge bg-warning text-dark">
+                        <i class="bi bi-star-fill"></i> Pro
+                    </span>
+                    <br />
+                    <small class="text-muted d-block">
+                        Expiry: @Model.User.ProMembershipExpiry?.ToString("yyyy-MM-dd")
+                    </small>
+                }
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Role</label>
+                <select asp-for="Roles[0]" class="form-select">
+                    @foreach (var role in new[] { "Admin", "Member" })
+                    {
+                        <option value="@role" selected="@Model.Roles.Contains(role)">@role</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,0 +1,491 @@
+using Garage_3._0.ConstantValues;
+using Garage_3._0.Data;
+using Garage_3._0.Extensions;
+using Garage_3._0.Models;
+using Garage_3._0.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Garage_3._0.Controllers
+{
+    [Authorize]
+    public class VehicleController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
+        public VehicleController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        {
+            _context = context;
+            _userManager = userManager;
+        }
+
+        // GET: Vehicle
+        [Authorize]
+        public async Task<IActionResult> Index(string? search)
+        {
+            ViewData["CurrentFilter"] = search;
+            ViewData["ParkingSpotsTotal"] = await _context.ParkingSpots.CountAsync();
+            ViewData["ParkingSpotsAvailable"] = await _context.ParkingSpots.CountAsync(p => !p.IsTaken);
+
+            var query = _context.Vehicles
+                .Include(v => v.Owner)
+                .Include(v => v.VehicleType)
+                .Include(v => v.Parkings)
+                .Include(v => v.ParkingSpots)
+                .AsQueryable();
+
+            if (!User.IsInRole(RolesNames.Admin))
+            {
+                var userId = _userManager.GetUserId(User);
+                query = query.Where(v => v.OwnerId == userId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim();
+                var sPlate = s.Replace(" ", "").ToUpperInvariant();
+
+                query = query.Where(v =>
+                    v.LicenseNumber.Contains(sPlate) ||
+                    v.Model.Contains(s) ||
+                    v.Color.Contains(s) ||
+                    v.VehicleType!.Name.Contains(s)
+                );
+            }
+
+            var vehicles = await query.ToListAsync();
+            return View(vehicles);
+        }
+
+        // GET: Vehicle/Details/5
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var vehicle = await _context.Vehicles
+                .Include(v => v.Owner)
+                .Include(v => v.VehicleType)
+                .Include(v => v.ParkingSpots)
+                .Include(v => v.Parkings)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (vehicle == null)
+            {
+                return NotFound();
+            }
+
+            Parking? parking = vehicle.Parkings.FirstOrDefault();
+            parking?.CheckInTime = vehicle.ArrivalTime;
+
+            VehicleDetailsViewModel viewModel = new() {
+                Id = vehicle.Id,
+                LicenseNumber = vehicle.LicenseNumber,
+                VehicleType = vehicle.VehicleType,
+                Color = vehicle.Color,
+                Model = vehicle.Model,
+                NumberOfWheels = vehicle.NumberOfWheels,
+                ArrivalTime = vehicle.ArrivalTime,
+                OwnerName = $"{vehicle.Owner?.FirstName} {vehicle.Owner?.LastName}",
+                OwnerEmail = vehicle.Owner?.Email,
+                ParkingSpots = vehicle.ParkingSpots,
+                Parking = parking,
+            };
+
+            return View(viewModel);
+        }
+
+        // GET: Vehicle/Create
+        [Authorize(Roles = $"{RolesNames.Admin},{RolesNames.Member}")]
+        public IActionResult Create()
+        {
+            ViewData["VehicleTypeId"] = new SelectList(_context.VehicleTypes.OrderBy(v => v.Name), "Id", "Name");
+
+            if (User.IsInRole("Admin"))
+                ViewData["OwnerId"] = new SelectList(_context.Users.OrderBy(u => u.Email), "Id", "Email");
+
+            return View();
+        }
+
+
+        // POST: Vehicle/Create
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = $"{RolesNames.Admin},{RolesNames.Member}")]
+        public async Task<IActionResult> Create(
+                [Bind("LicenseNumber,Model,Color,NumberOfWheels,VehicleTypeId")] Vehicle vehicle,
+                string? ownerId
+)
+        {
+            if (ModelState.IsValid)
+            {
+                vehicle.LicenseNumber = (vehicle.LicenseNumber ?? "").Replace(" ", "").ToUpperInvariant();
+
+                if (User.IsInRole("Admin"))
+                {
+                    vehicle.OwnerId = string.IsNullOrWhiteSpace(ownerId)
+                        ? _userManager.GetUserId(User)!
+                        : ownerId;
+                }
+                else
+                {
+                    vehicle.OwnerId = _userManager.GetUserId(User)!;
+                }
+
+                vehicle.ArrivalTime = DateTime.Now;
+
+                _context.Add(vehicle);
+
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateException)
+                {
+                    ModelState.AddModelError("LicenseNumber", "License number must be unique.");
+                }
+            }
+
+            ViewData["VehicleTypeId"] = new SelectList(_context.VehicleTypes.OrderBy(v => v.Name), "Id", "Name", vehicle.VehicleTypeId);
+            if (User.IsInRole("Admin"))
+                ViewData["OwnerId"] = new SelectList(_context.Users.OrderBy(u => u.Email), "Id", "Email", ownerId);
+
+            return View(vehicle);
+        }
+
+        // GET: Vehicle/Edit/5
+        [Authorize(Roles = $"{RolesNames.Admin},{RolesNames.Member}")]
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id is null) return NotFound();
+
+            var userId = _userManager.GetUserId(User);
+
+            var vehicle = await _context.Vehicles
+                .Include(v => v.Owner)
+                .Include(v => v.VehicleType)
+                .FirstOrDefaultAsync(v =>
+                    v.Id == id &&
+                    (User.IsInRole(RolesNames.Admin) || v.OwnerId == userId));
+
+            if (vehicle is null) return NotFound();
+
+            ViewData["VehicleTypeId"] = new SelectList(
+                _context.VehicleTypes.OrderBy(t => t.Name),
+                "Id", "Name",
+                vehicle.VehicleTypeId);
+
+            if (User.IsInRole(RolesNames.Admin))
+            {
+                ViewData["OwnerId"] = new SelectList(
+                    _context.Users.OrderBy(u => u.Email),
+                    "Id", "Email");
+
+                ViewBag.CurrentOwnerEmail = vehicle.Owner?.Email ?? "";
+            }
+
+            return View(vehicle);
+        }
+
+        // POST: Vehicle/Edit/5
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = $"{RolesNames.Admin},{RolesNames.Member}")]
+        public async Task<IActionResult> Edit(
+            int id,
+            [Bind("Id,LicenseNumber,Model,Color,NumberOfWheels,VehicleTypeId")] Vehicle vehicle,
+            string? ownerId)
+        {
+            if (id != vehicle.Id) return NotFound();
+
+            var userId = _userManager.GetUserId(User);
+
+            var existing = await _context.Vehicles
+                .Include(v => v.Owner)
+                .FirstOrDefaultAsync(v =>
+                    v.Id == id &&
+                    (User.IsInRole(RolesNames.Admin) || v.OwnerId == userId));
+
+            if (existing is null) return NotFound();
+
+            // Normalize
+            var normalized = (vehicle.LicenseNumber ?? "").Replace(" ", "").ToUpperInvariant();
+            vehicle.LicenseNumber = normalized;
+
+            // Unique check (exclude itself)
+            var regExists = await _context.Vehicles
+                .AnyAsync(v => v.LicenseNumber == normalized && v.Id != id);
+            if (regExists)
+                ModelState.AddModelError("LicenseNumber", "License number must be unique.");
+
+            if (ModelState.IsValid)
+            {
+                // Update only allowed fields
+                existing.LicenseNumber = normalized;
+                existing.Model = vehicle.Model;
+                existing.Color = vehicle.Color;
+                existing.NumberOfWheels = vehicle.NumberOfWheels;
+                existing.VehicleTypeId = vehicle.VehicleTypeId;
+
+                // Owner change only for Admin (and only if selected)
+                if (User.IsInRole(RolesNames.Admin) && !string.IsNullOrWhiteSpace(ownerId))
+                    existing.OwnerId = ownerId;
+
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Repopulate dropdowns when validation fails
+            ViewData["VehicleTypeId"] = new SelectList(
+                _context.VehicleTypes.OrderBy(t => t.Name),
+                "Id", "Name",
+                vehicle.VehicleTypeId);
+
+            if (User.IsInRole(RolesNames.Admin))
+            {
+                ViewData["OwnerId"] = new SelectList(
+                    _context.Users.OrderBy(u => u.Email),
+                    "Id", "Email",
+                    ownerId);
+
+                ViewBag.CurrentOwnerEmail = existing.Owner?.Email ?? "";
+            }
+
+            // Show user's entered values
+            existing.LicenseNumber = vehicle.LicenseNumber;
+            existing.Model = vehicle.Model;
+            existing.Color = vehicle.Color;
+            existing.NumberOfWheels = vehicle.NumberOfWheels;
+            existing.VehicleTypeId = vehicle.VehicleTypeId;
+
+            return View(existing);
+        }
+
+
+
+        // GET: Vehicle/Delete/5
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var vehicle = await _context.Vehicles
+                .Include(v => v.Owner)
+                .Include(v => v.VehicleType)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (vehicle == null)
+            {
+                return NotFound();
+            }
+
+            return View(vehicle);
+        }
+
+        // POST: Vehicle/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var vehicle = await _context.Vehicles.FindAsync(id);
+            if (vehicle != null)
+            {
+                _context.Vehicles.Remove(vehicle);
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        private bool VehicleExists(int id)
+        {
+            return _context.Vehicles.Any(e => e.Id == id);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> ParkVehicle(int id)
+        {
+            Vehicle? vehicle = await _context.Vehicles
+                .Include(v => v.VehicleType)
+                .FirstOrDefaultAsync(v => v.Id == id);
+            if (vehicle is null) {
+                return NotFound();
+            }
+
+            int? size = vehicle.VehicleType?.Size;
+            IEnumerable<ParkingSpot> parkingSpots = await _context.ParkingSpots
+                .Where(p => !p.IsTaken)
+                .Include(p => p.Vehicles)
+                    .ThenInclude(v => v.VehicleType)
+                .ToListAsync();
+            ICollection<ParkingSpotViewModel> availableParkingSpots = [];
+            foreach (ParkingSpot parkingSpot in parkingSpots) {
+                if (await parkingSpot.GetRemaingSpace(_context) >= size)
+                    availableParkingSpots.Add(new ParkingSpotViewModel {
+                        Number = parkingSpot.Id,
+                        VehicleId = vehicle.Id,
+                        Vehicles = parkingSpot.Vehicles.Select(v => v.LicenseNumber)
+                    });
+            }
+
+            return View(availableParkingSpots);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> ParkVehicleInSpot(int vehicleId, int spotId)
+        {
+            ApplicationUser? user = await _context.Users.FirstOrDefaultAsync(u => u.Email == User.Identity!.Name);
+            if (user is null || user.GetAge() < 18) {
+                return NotFound("Too young");
+            }
+
+            Vehicle? vehicle = await _context.Vehicles
+                .FirstOrDefaultAsync(v => v.Id == vehicleId);
+            if (vehicle is null) {
+                return NotFound();
+            }
+
+            ParkingSpot? parkingSpot = await _context.ParkingSpots
+                .FirstOrDefaultAsync(p => p.Id == spotId);
+            if (parkingSpot is null) {
+                return NotFound();
+            }
+
+            Parking parking = new() {
+                VehicleId = vehicle.Id,
+                ParkingSpotId = parkingSpot.Id,
+                Vehicle = vehicle,
+                ParkingSpot = parkingSpot,
+                CheckInTime = DateTime.Now,
+                IsActive = true
+            };
+
+            vehicle.ArrivalTime = DateTime.Now;
+            vehicle.Parkings.Add(parking);
+            vehicle.ParkingSpots.Add(parkingSpot);
+            parkingSpot.Vehicles.Add(vehicle);
+            parkingSpot.Parkings.Add(parking);
+
+            parkingSpot.IsTaken = true;
+
+            _context.UpdateRange(vehicle, parkingSpot);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [Authorize]
+        public async Task<IActionResult> RemoveVehicleFromSpot(int? id)
+        {
+            /*
+             * Removes everything from Vehicle.ParkingSpots & Vehicle.Parkings, and 
+             * everything from ParkingSpot.Vehicles & ParkingSpot.Parkings where Vehicle.Id match
+             */
+            if (id == null)
+                return NotFound();
+
+            Vehicle? vehicle = await _context.Vehicles
+                .Include(v => v.Parkings)
+                .ThenInclude(p => p.ParkingSpot)
+                .Include(v => v.ParkingSpots)
+                .FirstOrDefaultAsync(v => v.Id == id);
+
+            if (vehicle is null) {
+                return NotFound();
+            }
+
+            List<Parking> activeParkings = vehicle.Parkings
+                .Where(p => p.IsActive)
+                .ToList();
+
+            foreach (Parking parking in activeParkings)
+            {
+                parking.IsActive = false;                
+                parking.CheckOutTime = DateTime.Now;
+
+                parking.ParkingSpot.Vehicles.Remove(vehicle);
+                vehicle.ParkingSpots.Remove(parking.ParkingSpot);
+
+                parking.ParkingSpot.IsTaken = false;
+            }
+
+            _context.UpdateRange(activeParkings.Select(p => p.ParkingSpot));
+            _context.Update(vehicle);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+        public async Task<IActionResult> Park()
+        {
+            var userId = _userManager.GetUserId(User);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return RedirectToAction("Login", "Account", new { area = "Identity" });
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account", new { area = "Identity" });
+            }
+
+           
+            var allVehicles = await _context.Vehicles
+                .Where(v => v.OwnerId == userId)
+                .ToListAsync();
+
+            ViewBag.DebugTotalVehicles = allVehicles.Count;
+            ViewBag.DebugVehicles = string.Join(", ", allVehicles.Select(v => v.LicenseNumber));
+
+            // Get user's vehicles that are not currently parked
+            var availableVehicles = await _context.Vehicles
+                .Include(v => v.VehicleType)
+                .Include(v => v.Parkings)
+                .Where(v => v.OwnerId == userId && !v.Parkings.Any(ps => ps.IsActive))
+                .ToListAsync();
+
+            ViewBag.DebugAvailableVehicles = availableVehicles.Count;
+
+            if (!availableVehicles.Any())
+            {
+                var totalVehicles = await _context.Vehicles.CountAsync(v => v.OwnerId == userId);
+
+                if (totalVehicles == 0)
+                {
+                    TempData["Error"] = "You don't have any registered vehicles yet. Please register a vehicle first.";
+                }
+                else
+                {
+                    TempData["Error"] = "All your vehicles are already parked. Please check out a vehicle first from 'Parked Vehicles' page.";
+                }
+
+                return RedirectToAction("Index", "Vehicles");
+            }
+
+            ViewData["VehicleId"] = new SelectList(availableVehicles, "Id", "LicenseNumber");
+
+            // Also pass available parking count
+            var available = await _context.Parking.CountAsync(ps => !ps.IsActive);
+            ViewBag.AvailableSpots = available;
+
+            return View();
+        }
+    }
+}

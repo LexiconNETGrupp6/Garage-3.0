@@ -1,0 +1,155 @@
+﻿@using Garage_3._0.ConstantValues
+@model VehicleDetailsViewModel
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+@section Styles {
+    <style>
+        dialog .row {
+            border-bottom: 1px dashed black;
+            margin-top: .5em;
+        }
+    </style>
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>Vehicle</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.LicenseNumber)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.LicenseNumber)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.VehicleType)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.VehicleType!.Name)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Model)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Model)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Color)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Color)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.NumberOfWheels)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.NumberOfWheels)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.ArrivalTime)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.ArrivalTime) 
+            (@Html.DisplayFor(model => model.ParkingDuration))
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.OwnerName)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.OwnerName)
+            @if (User.IsInRole(RolesNames.Admin))
+            {                
+                <span>(@Html.DisplayFor(model => model.OwnerEmail))</span>
+            }
+        </dd>
+        <dt class="col-sm-2">
+            @(
+                Model.ParkingSpots.Count() == 0 ?
+                "Vehicle is not parked"
+                : $"Vehicles is parked in {(Model.ParkingSpots.Count() > 1 ? "spots" : "spot")}"
+            )
+        </dt>
+        <dd class="col-sm-10">
+            @if (Model.ParkingSpots.Any())
+            {
+                foreach (ParkingSpot spot in Model.ParkingSpots)
+                {
+                    <span>@spot.Id </span>
+                }                
+            }
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
+    @if (!Model!.ParkingSpots.Any())
+    {
+        <a asp-action="ParkVehicle" asp-route-id="@Model?.Id">Park Vehicle</a>
+        <span> |</span>
+    }
+    else
+    {
+        if (Model.Parking is not null)
+        {                   
+            <a id="open-dialog" href="#">
+                Checkout Vehicle
+            </a>
+            <span> |</span>
+            <dialog id="unpark-dialog" class="rounded border border-3 px-4" style="width: 30em">
+                <h3 class="text-center">Confirm Checkout</h3>
+                <div class="row">
+                    <span class="col-sm-6">Check-in Time</span>
+                    <span class="col-sm-6 text-end">@Model.ArrivalTime</span>
+                </div>
+                <div class="row d-flex justify-content-between">
+                    <span class="col-sm-6">Check-out Time</span>
+                    <span class="col-sm-6 text-end">
+                        @{
+                            Model.Parking.CheckOutTime = DateTime.Now;
+                        }
+                        @Model.Parking.CheckOutTime
+                    </span>
+                </div>
+                <div class="row d-flex justify-content-between">
+                    <span class="col-sm-6">Parking Duration</span>
+                    <span class="col-sm-6 text-end">@Model.ParkingDuration</span>
+                </div>
+                <div class="row d-flex justify-content-between">
+                    <span class="col-sm-6">Total Cost</span>
+                    <span class="col-sm-6 text-end">
+                        @{
+                            string cost = Model.Parking.CalculateCost().ToString("0 SEK");
+                        }
+                        Total Cost: @cost
+                    </span>
+                </div>
+                <div class="mt-3">
+                    <a asp-action="RemoveVehicleFromSpot" class="btn btn-danger" asp-route-id="@Model?.Id">Confirm</a>
+                    <span> | </span>
+                    <button class="btn btn-primary" id="close-dialog">Cancel</button>
+                </div>
+            </dialog>
+        }
+    }
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    <script>
+        const dialog = document.getElementById("unpark-dialog");
+        const openDialog = document.getElementById("open-dialog");
+        const closeDialog = document.getElementById("close-dialog");
+
+        openDialog.addEventListener("click", e => {
+            // a-tag so preventDefault() is needed
+            e.preventDefault();
+            dialog.showModal();
+        });
+        closeDialog.addEventListener("click", e => dialog.close());
+    </script>
+}

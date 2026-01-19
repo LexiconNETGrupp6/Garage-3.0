@@ -1,0 +1,204 @@
+﻿@model IEnumerable<Garage_3._0.Models.ViewModels.MemberViewModel>
+@using System.Linq
+
+@{
+    ViewData["Title"] = "Members Management";
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<h1><i class="bi bi-people"></i> @ViewData["Title"]</h1>
+<hr />
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="bi bi-people-fill"></i></h5>
+                <h2 class="card-text">@Model.Count(m => m.IsProMember)</h2>
+                <p class="card-text">Pro Members</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="bi bi-star-fill"></i></h5>
+                <h2 class="card-text">@Model.Count(m => !m.IsProMember)</h2>
+                <p class="card-text">Basic Members</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="bi bi-car-front-fill"></i></h5>
+                <h2 class="card-text">@Model.Sum(m => m.VehicleCount)</h2>
+                <p class="card-text">Total Vehicles</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="bi bi-currency-dollar"></i></h5>
+                <h2 class="card-text">@Model.Sum(m => m.TotalCurrentCost).ToString("0 SEK")</h2>
+                <p class="card-text">Current Revenue</p>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Search and Filter -->
+<form asp-action="Index" method="get" class="mb-4">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <input type="text" name="searchString" value="@ViewData["CurrentFilter"]"
+                   class="form-control" placeholder="Search by name, email, or personal number..." />
+        </div>
+        <div class="col-md-4">
+            <select name="membershipFilter" class="form-select">
+                <option value="">All Memberships</option>
+                <option value="pro" selected="@(ViewData["MembershipFilter"]?.ToString() == "pro")">Pro Members Only</option>
+                <option value="basic" selected="@(ViewData["MembershipFilter"]?.ToString() == "basic")">Basic Members Only</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-search"></i> Search
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- Members Table -->
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        <h4>No members found</h4>
+        <p>Try adjusting your search criteria.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Personal Number</th>
+                    <th>Membership</th>
+                    <th>Roles</th>
+                    <th>Vehicles</th>
+                    <th>Active Parking</th>
+                    <th>Current Cost</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var member in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@member.User.FirstName @member.User.LastName</strong>
+                        </td>
+                        <td>@member.User.Email</td>
+                        <td>
+                            <code>@member.User.PersonalNumber</code>
+                        </td>
+                        <td>
+                            @if (member.IsProMember)
+                            {
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-star-fill"></i> Pro
+                                </span>
+                                <br />
+                                @if (member.User.ProMembershipExpiry.HasValue)
+                                {
+                                    <small class="text-muted">
+                                        Expires: @member.User.ProMembershipExpiry.Value.ToString("yyyy-MM-dd")
+                                    </small>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Basic</span>
+                            }
+                        </td>
+                        <td>
+                            @foreach (var role in member.Roles)
+                            {
+                                <span class="badge bg-primary">@role</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-info text-dark">@member.VehicleCount</span>
+                        </td>
+                        <td class="text-center">
+                            @if (member.ActiveParkingCount > 0)
+                            {
+                                <span class="badge bg-success">@member.ActiveParkingCount parked</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            @if (member.TotalCurrentCost > 0)
+                            {
+                                <strong class="text-success">@member.TotalCurrentCost.ToString("0 SEK")</strong>
+                            }
+                            else
+                            {
+                                <span class="text-muted">0 SEK</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@member.User.Id"
+                               class="btn btn-sm btn-info" title="View Details">
+                                <i class="bi bi-eye"></i> Details
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@member.User.Id" class="btn btn-sm btn-info" title="Edit">
+                                <i class="bi bi-eye"></i>Edit
+                            </a>
+                            @if (!member.Roles.Contains("Admin"))
+                            {
+                                <a asp-action="Delete" asp-route-id="@member.User.Id"
+                                   class="btn btn-sm btn-danger">
+                                    <i class="bi bi-trash"></i> Delete
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="table-secondary">
+                    <td colspan="6" class="text-end"><strong>Totals:</strong></td>
+                    <td class="text-center">
+                        <strong>@Model.Sum(m => m.ActiveParkingCount)</strong>
+                    </td>
+                    <td>
+                        <strong class="text-success">@Model.Sum(m => m.TotalCurrentCost).ToString("0 SEK")</strong>
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+}

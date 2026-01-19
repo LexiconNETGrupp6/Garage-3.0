@@ -4,6 +4,7 @@ using Garage_3._0.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,13 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Garage_3._0.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260115203344_RemoveVehicleTypeHasData")]
+    partial class RemoveVehicleTypeHasData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -45,9 +48,6 @@ namespace Garage_3._0.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("IsProMember")
-                        .HasColumnType("bit");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -82,9 +82,6 @@ namespace Garage_3._0.Data.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime?>("ProMembershipExpiry")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -111,41 +108,6 @@ namespace Garage_3._0.Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("Garage_3._0.Models.Parking", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CheckInTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("CheckOutTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Cost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("ParkingSpotId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("VehicleId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParkingSpotId");
-
-                    b.HasIndex("VehicleId");
-
-                    b.ToTable("Parking");
-                });
-
             modelBuilder.Entity("Garage_3._0.Models.ParkingSpot", b =>
                 {
                     b.Property<int>("Id")
@@ -159,11 +121,6 @@ namespace Garage_3._0.Data.Migrations
 
                     b.Property<int>("Size")
                         .HasColumnType("int");
-
-                    b.Property<string>("SpotNumber")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id");
 
@@ -390,25 +347,6 @@ namespace Garage_3._0.Data.Migrations
                     b.ToTable("ParkingSpotVehicle");
                 });
 
-            modelBuilder.Entity("Garage_3._0.Models.Parking", b =>
-                {
-                    b.HasOne("Garage_3._0.Models.ParkingSpot", "ParkingSpot")
-                        .WithMany("Parkings")
-                        .HasForeignKey("ParkingSpotId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Garage_3._0.Models.Vehicle", "Vehicle")
-                        .WithMany("Parkings")
-                        .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ParkingSpot");
-
-                    b.Navigation("Vehicle");
-                });
-
             modelBuilder.Entity("Garage_3._0.Models.Vehicle", b =>
                 {
                     b.HasOne("Garage_3._0.Models.ApplicationUser", "Owner")
@@ -497,16 +435,6 @@ namespace Garage_3._0.Data.Migrations
             modelBuilder.Entity("Garage_3._0.Models.ApplicationUser", b =>
                 {
                     b.Navigation("Vehicles");
-                });
-
-            modelBuilder.Entity("Garage_3._0.Models.ParkingSpot", b =>
-                {
-                    b.Navigation("Parkings");
-                });
-
-            modelBuilder.Entity("Garage_3._0.Models.Vehicle", b =>
-                {
-                    b.Navigation("Parkings");
                 });
 #pragma warning restore 612, 618
         }
