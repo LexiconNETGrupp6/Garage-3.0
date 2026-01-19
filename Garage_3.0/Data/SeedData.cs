@@ -67,7 +67,10 @@ namespace Garage_3._0.Data
             }
 
             await _context.SaveChangesAsync();
-            await JoinVehiclesAndParkingSpots();
+            if (!await _context.ParkingSpots.AnyAsync())
+            {
+                await JoinVehiclesAndParkingSpots();
+            }
         }
 
         private static async Task JoinVehiclesAndParkingSpots()
