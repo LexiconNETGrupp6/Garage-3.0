@@ -33,10 +33,7 @@
                 @Html.DisplayNameFor(model => model.LicenseNumber)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Model)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Color)
+                Parking Spot(s):
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.NumberOfWheels)
@@ -60,10 +57,13 @@
                 @Html.DisplayFor(modelItem => item.LicenseNumber)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Model)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Color)
+                        @if (item.Parkings is not null)
+                        {
+                            @foreach (Parking parking in item.Parkings)
+                            {
+                                <span>@parking.ParkingSpotId </span>
+                            }
+                        }
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.NumberOfWheels)
