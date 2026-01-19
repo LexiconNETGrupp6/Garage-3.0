@@ -1,47 +1,61 @@
 ﻿@model IEnumerable<Garage_3._0.Models.ParkingSpot>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Parking Spots";
 }
 
-<h1>Index</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Index</h1>
+    <a asp-action="Create" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Create New
+    </a>
+</div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.SpotNumber)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Size)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IsTaken)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.SpotNumber)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Size)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IsTaken)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+<div class="table-responsive shadow-sm rounded">
+    <table class="table table-hover table-striped align-middle mb-0">
+        <thead class="table-dark">
+            <tr>
+                <th>@Html.DisplayNameFor(model => model.SpotNumber)</th>
+                <th>@Html.DisplayNameFor(model => model.Size)</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td class="fw-bold">
+                        @Html.DisplayFor(modelItem => item.SpotNumber)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Size)
+                    </td>
+                    <td>
+                        @if (item.IsTaken)
+                        {
+                            <span class="badge bg-warning text-dark">Taken</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Available</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group" role="group">
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning text-dark">
+                                Edit
+                            </a>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info text-white">
+                                Details
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">
+                                Delete
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

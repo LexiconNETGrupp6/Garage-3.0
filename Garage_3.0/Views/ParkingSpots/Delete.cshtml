@@ -33,7 +33,21 @@
     
     <form asp-action="Delete">
         <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Delete" class="btn btn-danger" /> |
+
+        @if (Model.IsTaken)
+        {
+            <div class="alert alert-warning">
+                Space taken cannot be deleted.
+            </div>
+
+            <input type="submit" value="Delete" class="btn btn-danger" disabled="disabled" />
+        }
+        else
+        {
+            <input type="submit" value="Delete" class="btn btn-danger" />
+        }
+
+        |
         <a asp-action="Index">Back to List</a>
     </form>
 </div>

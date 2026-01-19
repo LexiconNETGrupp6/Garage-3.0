@@ -144,6 +144,12 @@ namespace Garage_3._0.Controllers
             var parkingSpot = await _context.ParkingSpots.FindAsync(id);
             if (parkingSpot != null)
             {
+                // Check if parking spot is taken
+                if (parkingSpot.IsTaken)
+                {
+                    ModelState.AddModelError(string.Empty, "This parking spot is currently taken and cannot be deleted.");
+                    return View("Delete", parkingSpot);
+                }
                 _context.ParkingSpots.Remove(parkingSpot);
             }
 
