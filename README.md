@@ -13,7 +13,9 @@ Password: P@55w.rD!
 ## **Instruktioner**:
 ### Registera nytt Fordon
 - Tryck på "Register New Vehicle"
-- Skriv in info och tryck på "Register"
+- Skriv in info och tryck på "Register"<br>
+
+Admins can see and manage every vehicle while members can only see and manage their own
 ### Parkera
 - Hitta fordonet i listan och tryck på "Park Vehicle" alternativt gå till "Details" sedan "Park Vehicle"
 - Välj en ruta. Sedan klar
