@@ -2,7 +2,7 @@
 {
     public class ParkingSpotViewModel
     {
-        public int Number { get; set; }
+        public string Number { get; set; } = string.Empty;
         public int VehicleId { get; set; }
         public IEnumerable<string> Vehicles { get; set; } = [];
     }
