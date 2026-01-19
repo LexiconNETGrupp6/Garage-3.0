@@ -39,6 +39,7 @@ namespace Garage_3._0.Controllers
                 .Include(v => v.Owner)
                 .Include(v => v.VehicleType)
                 .Include(v => v.Parkings)
+                .Include(v => v.ParkingSpots)
                 .AsQueryable();
 
             if (!User.IsInRole(RolesNames.Admin))

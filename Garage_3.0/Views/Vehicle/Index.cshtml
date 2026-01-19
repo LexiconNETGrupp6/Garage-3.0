@@ -57,13 +57,13 @@
                 @Html.DisplayFor(modelItem => item.LicenseNumber)
             </td>
             <td>
-                        @if (item.Parkings is not null)
-                        {
-                            @foreach (Parking parking in item.Parkings)
-                            {
-                                <span>@parking.ParkingSpotId </span>
-                            }
-                        }
+                @if (item.ParkingSpots is not null)        
+                {
+                    @foreach (ParkingSpot parkingspot in item.ParkingSpots)
+                    {
+                        <span>@parkingspot.SpotNumber </span>
+                    }
+                }
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.NumberOfWheels)
