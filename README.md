@@ -28,3 +28,8 @@ Admins kan se och hantera alla fordon medans vanliga medlemmar kan endast se och
 - Tryck på "Details" för att se deras roller, fordon och kostnader
 - Tryck på "Edit" för att göra medlemmen till Pro-Member, Admin, eller vanlig Member
 - Tryck på "Delete" och sedan "Confirm Delete" för att ta bort kontot
+### (Admin) Hantera parkeringsplatser
+- Gå till "Parking Spot"
+- Gå till "Details" för att se platsens Nummer, Storlek och ifall det är taget (IsTaken)
+- Gå till "Edit" för att ändra Nummer, Storlek och ifall det är taget (IsTaken)
+- Gå till "Delete" och sedan "Confirm" för att radera en plats. Kan inte raderas ifall platsen är tagen
