@@ -337,7 +337,7 @@ namespace Garage_3._0.Controllers
             foreach (ParkingSpot parkingSpot in parkingSpots) {
                 if (await parkingSpot.GetRemaingSpace(_context) >= size)
                     availableParkingSpots.Add(new ParkingSpotViewModel {
-                        Number = parkingSpot.Id,
+                        Number = parkingSpot.SpotNumber,
                         VehicleId = vehicle.Id,
                         Vehicles = parkingSpot.Vehicles.Select(v => v.LicenseNumber)
                     });
