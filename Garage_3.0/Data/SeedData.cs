@@ -171,7 +171,7 @@ namespace Garage_3._0.Data
                 owner = members[i % memberCount];
                 type = vehicleTypes[_rnd.Next(0, vehicleTypeCount)];
                 vehicles.Add(new Vehicle {
-                    LicenseNumber = _faker.Random.Replace("??? ##*"), // regex: /[A-Z]{3} \d{2}[A-Z0-9]/
+                    LicenseNumber = _faker.Random.Replace("???##*"), // regex: /[A-Z]{3} \d{2}[A-Z0-9]/
                     ParkedDuration = TimeSpan.FromMinutes(_rnd.Next(601)),
                     Model = _faker.Vehicle.Model(),
                     Color = _faker.Commerce.Color(),
